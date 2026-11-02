@@ -68,7 +68,8 @@ src/server/World.lua         зал: зоны, ресепшен, стеклян�
 src/server/MachineModels.lua модели тренажёров из деталей
 src/server/Data.lua          сохранение с повторами и защитой от затирания
 src/server/Body.lua          табличка над головой и рост тела
-src/server/Npcs.lua          администратор и тренер
+src/server/Npcs.lua          NPC: администратор, тренер, качки на сцене, зрители
+src/server/Looks.lua         уникальный облик каждого NPC: причёски, одежда, аксессуары
 src/client/Main.client.lua   ввод, метки над тренажёрами, всплывающие числа
 src/client/Hud.lua           интерфейс
 src/client/TrainAnimator.lua анимации тела и тренажёров

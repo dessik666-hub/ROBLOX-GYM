@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 
 local RS = game:GetService("ReplicatedStorage")
 local Config = require(RS.Shared.Config)
+local Looks = require(script.Parent.Looks)
 
 local Npcs = {}
 
@@ -29,33 +30,21 @@ local CHEERS = {
 	"Вот это пампинг!",
 }
 
-local SKIN = {
-	Color3.fromRGB(234, 184, 146),
-	Color3.fromRGB(204, 142, 105),
-	Color3.fromRGB(160, 105, 75),
-	Color3.fromRGB(110, 72, 52),
-}
-local SHIRTS = {
-	Color3.fromRGB(255, 80, 200),
-	Color3.fromRGB(60, 190, 255),
-	Color3.fromRGB(170, 90, 255),
-	Color3.fromRGB(255, 200, 60),
-	Color3.fromRGB(80, 230, 140),
-}
-
-local function makeRig(name, shirtColor, cf, width)
+-- look: see Looks.lua; build = { width, height }
+local function makeRig(name, cf, look, build)
+	build = build or {}
 	local rig
 	local ok = pcall(function()
 		local desc = Instance.new("HumanoidDescription")
-		local skin = SKIN[math.random(1, #SKIN)]
-		desc.HeadColor = skin
-		desc.LeftArmColor = skin
-		desc.RightArmColor = skin
-		desc.LeftLegColor = Color3.fromRGB(30, 30, 40)
-		desc.RightLegColor = desc.LeftLegColor
-		desc.TorsoColor = shirtColor
-		desc.WidthScale = width or 1.3
-		desc.DepthScale = width or 1.3
+		desc.HeadColor = look.skin
+		desc.LeftArmColor = look.skin
+		desc.RightArmColor = look.skin
+		desc.LeftLegColor = look.bottom
+		desc.RightLegColor = look.bottom
+		desc.TorsoColor = look.top
+		desc.WidthScale = build.width or 1.1
+		desc.DepthScale = build.width or 1.1
+		desc.HeightScale = build.height or 1
 		rig = Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
 	end)
 	if not ok or not rig then
@@ -64,7 +53,7 @@ local function makeRig(name, shirtColor, cf, width)
 		local body = Instance.new("Part")
 		body.Name = "HumanoidRootPart"
 		body.Size = Vector3.new(2, 5, 1)
-		body.Color = shirtColor
+		body.Color = look.top
 		body.Parent = rig
 		local head = Instance.new("Part")
 		head.Name = "Head"
@@ -86,6 +75,7 @@ local function makeRig(name, shirtColor, cf, width)
 		humanoid.NameDisplayDistance = 60
 	end
 	rig:PivotTo(cf)
+	Looks.apply(rig, look)
 	return rig
 end
 
@@ -176,7 +166,7 @@ function Npcs.start(parent, layout, getTrainees)
 
 	-- Receptionist behind the desk, facing the spawn
 	local a = layout.admin
-	local admin = makeRig("Администратор Лана", SHIRTS[1], CFrame.lookAt(a.pos, a.pos + a.facing))
+	local admin = makeRig("Администратор Лана", CFrame.lookAt(a.pos, a.pos + a.facing), Looks.cast.admin.look, Looks.cast.admin.build)
 	admin.Parent = folder
 	anchor(admin)
 	local adminSay = bubble(admin)
@@ -200,7 +190,8 @@ function Npcs.start(parent, layout, getTrainees)
 
 	-- Bodybuilders posing on the stage
 	for _, p in ipairs(layout.posers) do
-		local rig = makeRig(p.name, SHIRTS[math.random(1, #SHIRTS)], CFrame.lookAt(p.pos, p.pos + p.facing), 1.7)
+		local style = Looks.cast.posers[p.name] or Looks.cast.posers["Рекс"]
+		local rig = makeRig(p.name, CFrame.lookAt(p.pos, p.pos + p.facing), style.look, style.build)
 		rig.Parent = folder
 		anchor(rig)
 		rig:SetAttribute("Pose", "pose")
@@ -209,7 +200,8 @@ function Npcs.start(parent, layout, getTrainees)
 
 	-- Spectators clapping along the carpet
 	for i, s in ipairs(layout.spectators) do
-		local rig = makeRig("Зритель " .. i, SHIRTS[math.random(1, #SHIRTS)], CFrame.lookAt(s.pos, s.pos + s.facing), 1.0)
+		local look = Looks.cast.spectators[(i - 1) % #Looks.cast.spectators + 1]
+		local rig = makeRig("Зритель " .. i, CFrame.lookAt(s.pos, s.pos + s.facing), look, { width = 0.95 + (i % 3) * 0.1, height = 0.92 + (i % 4) * 0.05 })
 		rig.Parent = folder
 		anchor(rig)
 		rig:SetAttribute("Pose", "clap")
@@ -222,7 +214,7 @@ function Npcs.start(parent, layout, getTrainees)
 	-- Coach walks to trainees in the gym and cheers
 	local area = layout.coachArea
 	local start = Vector3.new((area.min.X + area.max.X) / 2, 3.2, 0)
-	local coach = makeRig("Тренер Макс", SHIRTS[2], CFrame.new(start))
+	local coach = makeRig("Тренер Макс", CFrame.new(start), Looks.cast.coach.look, Looks.cast.coach.build)
 	coach.Parent = folder
 	local coachRoot = coach:FindFirstChild("HumanoidRootPart")
 	local coachHumanoid = coach:FindFirstChildOfClass("Humanoid")

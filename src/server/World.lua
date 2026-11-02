@@ -25,6 +25,10 @@ local PINK = Color3.fromRGB(255, 80, 200)
 local GOLD = Color3.fromRGB(255, 200, 60)
 local RED = Color3.fromRGB(190, 25, 55)
 
+-- Banner font: Oswald (narrow, sporty, supports Cyrillic) with a neon outline.
+-- Many decorative Roblox fonts have no Cyrillic glyphs and silently fall back.
+local SIGN_FONT = Font.new("rbxasset://fonts/families/Oswald.json", Enum.FontWeight.Bold)
+
 local MIN_X, MAX_X = -280, 400
 local MIN_Z, MAX_Z = -130, 130
 local HEIGHT = 40
@@ -54,9 +58,33 @@ local function part(parent, name, size, cf, color, material)
 	return p
 end
 
+-- Text styled like a neon tube: bright core, colored glow outline
+local function neonText(label, color, glow)
+	label.FontFace = SIGN_FONT
+	label.TextColor3 = color:Lerp(Color3.new(1, 1, 1), 0.55)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color
+	stroke.Thickness = glow or 4
+	stroke.Transparency = 0.1
+	stroke.Parent = label
+end
+
 local function sign(parent, text, pos, facing, color, width, height)
-	local board = part(parent, "Sign", Vector3.new(width or 24, height or 5, 0.4), CFrame.new(pos) * facing, Color3.fromRGB(15, 10, 25))
+	local board = part(parent, "Sign", Vector3.new(width or 24, height or 5, 0.4), CFrame.new(pos) * facing, Color3.fromRGB(12, 8, 22))
 	board.CanCollide = false
+	-- Neon frame around the board
+	local w, h = width or 24, height or 5
+	local frameCF = CFrame.new(pos) * facing
+	for _, e in ipairs({
+		{ Vector3.new(w, 0.25, 0.5), CFrame.new(0, h / 2, 0) },
+		{ Vector3.new(w, 0.25, 0.5), CFrame.new(0, -h / 2, 0) },
+		{ Vector3.new(0.25, h, 0.5), CFrame.new(w / 2, 0, 0) },
+		{ Vector3.new(0.25, h, 0.5), CFrame.new(-w / 2, 0, 0) },
+	}) do
+		local edge = part(parent, "SignFrame", e[1], frameCF * e[2], color, Enum.Material.Neon)
+		edge.CanCollide = false
+	end
+
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = Enum.NormalId.Back
 	gui.PixelsPerStud = 30
@@ -66,9 +94,14 @@ local function sign(parent, text, pos, facing, color, width, height)
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextScaled = true
-	label.Font = Enum.Font.GothamBlack
-	label.TextColor3 = color
 	label.Parent = gui
+	neonText(label, color, 5)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0.12, 0)
+	pad.PaddingBottom = UDim.new(0.12, 0)
+	pad.PaddingLeft = UDim.new(0.04, 0)
+	pad.PaddingRight = UDim.new(0.04, 0)
+	pad.Parent = label
 	return board
 end
 
@@ -123,8 +156,8 @@ local function screen(parent, name, size, cf, face, title, lineCount, accent)
 	end
 
 	local titleLabel = line(title, 0.2, accent, 0)
-	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+	neonText(titleLabel, accent, 3)
 	local lines = {}
 	for i = 1, lineCount do
 		lines[i] = line("", 0.74 / lineCount, Color3.new(1, 1, 1), i)
@@ -282,9 +315,8 @@ local function buildPodium(hall)
 	title.BackgroundTransparency = 1
 	title.Text = "NEON STAGE"
 	title.TextScaled = true
-	title.TextColor3 = PINK
-	title.Font = Enum.Font.GothamBlack
 	title.Parent = gui
+	neonText(title, PINK, 6)
 	for _, z in ipairs({ -50, 50 }) do
 		part(hall, "BackdropGlow", Vector3.new(1.4, 34, 1), CFrame.new(-277.5, 17, z), PINK, Enum.Material.Neon)
 	end
