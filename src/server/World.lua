@@ -244,15 +244,19 @@ end
 ---------------------------------------------------------------------------
 -- Areas
 ---------------------------------------------------------------------------
--- Open grass field instead of a building, with trees around the edge
+-- Open grass field with trees around the edge.
+-- Hand-made maps win: if the place already has terrain, it is left alone,
+-- and if Workspace has a folder named "Map", no trees are generated.
 local function buildField(hall)
 	local terrain = workspace.Terrain
-	-- Grass top sits exactly at y = 0 (terrain voxels are 4 studs)
-	terrain:FillBlock(CFrame.new(60, -8, 0), Vector3.new(1600, 16, 1200), Enum.Material.Grass)
+	if terrain:CountCells() == 0 then
+		-- Grass top sits exactly at y = 0 (terrain voxels are 4 studs)
+		terrain:FillBlock(CFrame.new(60, -8, 0), Vector3.new(1600, 16, 1200), Enum.Material.Grass)
+	end
 
-	-- Trees around the play area
+	-- Trees around the play area (skipped when you place your own in Workspace.Map)
 	local rng = Random.new(42)
-	local placed = 0
+	local placed = workspace:FindFirstChild("Map") and 70 or 0
 	while placed < 70 do
 		local x = rng:NextNumber(-560, 680)
 		local z = rng:NextNumber(-520, 520)

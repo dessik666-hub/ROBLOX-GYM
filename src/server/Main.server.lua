@@ -85,6 +85,11 @@ end
 ---------------------------------------------------------------------------
 -- Stations
 ---------------------------------------------------------------------------
+-- A preview built in edit mode (see README, "Editing the map") is replaced here
+local oldGym = workspace:FindFirstChild("Gym")
+if oldGym then
+	oldGym:Destroy()
+end
 local world = World.build()
 local stations = world.stations
 local poseStations = {}
