@@ -1,4 +1,4 @@
--- Builds the neon club in code.
+-- Builds the club in code: everything stands outdoors on an open grass field.
 --
 -- Top view (the player spawns facing -Z):
 --
@@ -69,9 +69,21 @@ local function neonText(label, color, glow)
 	stroke.Parent = label
 end
 
+-- Two dark posts from the ground up to the bottom of a board
+local function posts(parent, cf, width, bottomY)
+	if bottomY <= 0.5 then
+		return
+	end
+	for _, side in ipairs({ -1, 1 }) do
+		local base = cf * CFrame.new(side * (width / 2 - 1), 0, 0)
+		part(parent, "Post", Vector3.new(0.8, bottomY, 0.8), CFrame.new(base.Position.X, bottomY / 2, base.Position.Z), Color3.fromRGB(35, 30, 45), Enum.Material.Metal)
+	end
+end
+
 local function sign(parent, text, pos, facing, color, width, height)
 	local board = part(parent, "Sign", Vector3.new(width or 24, height or 5, 0.4), CFrame.new(pos) * facing, Color3.fromRGB(12, 8, 22))
 	board.CanCollide = false
+	posts(parent, CFrame.new(pos) * facing, width or 24, pos.Y - (height or 5) / 2)
 	-- Neon frame around the board
 	local w, h = width or 24, height or 5
 	local frameCF = CFrame.new(pos) * facing
@@ -123,6 +135,9 @@ end
 local function screen(parent, name, size, cf, face, title, lineCount, accent)
 	local board = part(parent, name, size, cf, Color3.fromRGB(12, 8, 22))
 	board.CanCollide = false
+	-- Posts along the board's long side
+	local postCF = size.X >= size.Z and cf or cf * CFrame.Angles(0, math.pi / 2, 0)
+	posts(parent, postCF, math.max(size.X, size.Z), cf.Position.Y - size.Y / 2)
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = face
 	gui.PixelsPerStud = 25
@@ -166,18 +181,31 @@ local function screen(parent, name, size, cf, face, title, lineCount, accent)
 end
 
 local function setupLighting()
-	Lighting.ClockTime = 0
-	Lighting.Brightness = 1
-	Lighting.Ambient = Color3.fromRGB(95, 70, 130)
-	Lighting.OutdoorAmbient = Color3.fromRGB(80, 60, 120)
-	Lighting.EnvironmentDiffuseScale = 0.4
-	Lighting.EnvironmentSpecularScale = 0.6
-	if not Lighting:FindFirstChildOfClass("BloomEffect") then
-		local bloom = Instance.new("BloomEffect")
-		bloom.Intensity = 0.6
-		bloom.Size = 30
-		bloom.Threshold = 1.6
-		bloom.Parent = Lighting
+	-- Sunny afternoon over the field
+	Lighting.ClockTime = 14.5
+	Lighting.Brightness = 2
+	Lighting.Ambient = Color3.fromRGB(70, 70, 80)
+	Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 135)
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 1
+	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
+	bloom.Intensity = 0.4
+	bloom.Size = 24
+	bloom.Threshold = 2
+	bloom.Parent = Lighting
+	if not Lighting:FindFirstChildOfClass("Atmosphere") then
+		local atmosphere = Instance.new("Atmosphere")
+		atmosphere.Density = 0.3
+		atmosphere.Haze = 1
+		atmosphere.Color = Color3.fromRGB(199, 220, 255)
+		atmosphere.Decay = Color3.fromRGB(106, 140, 180)
+		atmosphere.Parent = Lighting
+	end
+	if not workspace.Terrain:FindFirstChildOfClass("Clouds") then
+		local clouds = Instance.new("Clouds")
+		clouds.Cover = 0.5
+		clouds.Density = 0.6
+		clouds.Parent = workspace.Terrain
 	end
 end
 
@@ -216,48 +244,38 @@ end
 ---------------------------------------------------------------------------
 -- Areas
 ---------------------------------------------------------------------------
-local function buildShell(hall)
-	part(hall, "Floor", Vector3.new(WIDTH_X, 1, DEPTH_Z), CFrame.new(CENTER_X, -0.5, 0), FLOOR, Enum.Material.Glass)
-	part(hall, "Roof", Vector3.new(WIDTH_X, 1, DEPTH_Z), CFrame.new(CENTER_X, HEIGHT + 0.5, 0), WALL)
-	part(hall, "WallNear", Vector3.new(WIDTH_X, HEIGHT, 2), CFrame.new(CENTER_X, HEIGHT / 2, MAX_Z + 1), WALL)
-	part(hall, "WallFar", Vector3.new(WIDTH_X, HEIGHT, 2), CFrame.new(CENTER_X, HEIGHT / 2, MIN_Z - 1), WALL)
-	part(hall, "WallLeft", Vector3.new(2, HEIGHT, DEPTH_Z), CFrame.new(MIN_X - 1, HEIGHT / 2, 0), WALL)
-	part(hall, "WallRight", Vector3.new(2, HEIGHT, DEPTH_Z), CFrame.new(MAX_X + 1, HEIGHT / 2, 0), WALL)
+-- Open grass field instead of a building, with trees around the edge
+local function buildField(hall)
+	local terrain = workspace.Terrain
+	-- Grass top sits exactly at y = 0 (terrain voxels are 4 studs)
+	terrain:FillBlock(CFrame.new(60, -8, 0), Vector3.new(1600, 16, 1200), Enum.Material.Grass)
 
-	-- Dividers between lobby and the two halls, with wide arches (z -25..25)
-	for _, x in ipairs({ -60, 60 }) do
-		part(hall, "Divider", Vector3.new(2, HEIGHT, 105), CFrame.new(x, HEIGHT / 2, -77.5), WALL)
-		part(hall, "Divider", Vector3.new(2, HEIGHT, 105), CFrame.new(x, HEIGHT / 2, 77.5), WALL)
-		part(hall, "Lintel", Vector3.new(2, 16, 50), CFrame.new(x, HEIGHT - 8, 0), WALL)
-		local color = x > 0 and STRENGTH or PINK
-		part(hall, "ArchGlow", Vector3.new(2.2, 0.6, 50), CFrame.new(x, 24, 0), color, Enum.Material.Neon)
-		part(hall, "ArchGlow", Vector3.new(2.2, 24, 0.6), CFrame.new(x, 12, -25), color, Enum.Material.Neon)
-		part(hall, "ArchGlow", Vector3.new(2.2, 24, 0.6), CFrame.new(x, 12, 25), color, Enum.Material.Neon)
-	end
-	sign(hall, "ТРЕНАЖЁРНЫЙ ЗАЛ →", Vector3.new(58.6, 30, 0), FACE_MINUS_X, STRENGTH, 44, 8)
-	sign(hall, "← ПОДИУМ", Vector3.new(-58.6, 30, 0), FACE_PLUS_X, PINK, 44, 8)
-
-	-- Ceiling light strips with real lights
-	for x = MIN_X + 20, MAX_X - 20, 40 do
-		local color = x < -60 and PINK or (x > 60 and STRENGTH or GOLD)
-		part(hall, "LightStrip", Vector3.new(2, 0.4, DEPTH_Z - 20), CFrame.new(x, HEIGHT - 0.2, 0), color, Enum.Material.Neon)
-		for _, z in ipairs({ -80, 0, 80 }) do
-			local holder = part(hall, "LightPoint", Vector3.new(0.5, 0.5, 0.5), CFrame.new(x, HEIGHT - 1.5, z), color, Enum.Material.Neon)
-			holder.Transparency = 1
-			holder.CanCollide = false
-			local light = Instance.new("PointLight")
-			light.Range = 50
-			light.Brightness = 1.2
-			light.Color = color:Lerp(Color3.new(1, 1, 1), 0.5)
-			light.Parent = holder
+	-- Trees around the play area
+	local rng = Random.new(42)
+	local placed = 0
+	while placed < 70 do
+		local x = rng:NextNumber(-560, 680)
+		local z = rng:NextNumber(-520, 520)
+		local insidePlay = x > -320 and x < 440 and z > -165 and z < 165
+		if not insidePlay then
+			placed += 1
+			local height = rng:NextNumber(10, 18)
+			part(hall, "TreeTrunk", Vector3.new(1.6, height, 1.6), CFrame.new(x, height / 2, z), Color3.fromRGB(105, 70, 45), Enum.Material.Wood)
+			local crown = rng:NextNumber(10, 16)
+			local leaves = part(hall, "TreeLeaves", Vector3.new(crown, crown, crown), CFrame.new(x, height + crown * 0.3, z), Color3.fromRGB(60, 140 + rng:NextInteger(0, 40), 60), Enum.Material.Grass)
+			leaves.Shape = Enum.PartType.Ball
 		end
 	end
+
+	-- Signposts pointing to the gym area and the podium
+	sign(hall, "ТРЕНАЖЁРНЫЙ ЗАЛ →", Vector3.new(40, 9, -6), FACE_PLUS_Z, STRENGTH, 30, 6)
+	sign(hall, "← ПОДИУМ", Vector3.new(-40, 9, -6), FACE_PLUS_Z, PINK, 24, 6)
 end
 
 local function buildLobby(hall)
 	part(hall, "ReceptionDesk", Vector3.new(18, 4, 3), CFrame.new(0, 2, 25), Color3.fromRGB(50, 30, 80), Enum.Material.Glass)
 	part(hall, "ReceptionGlow", Vector3.new(18.2, 0.4, 3.2), CFrame.new(0, 4.1, 25), PINK, Enum.Material.Neon)
-	sign(hall, "NEON GYM", Vector3.new(0, 33, 14), FACE_PLUS_Z, PINK, 40, 9)
+	sign(hall, "NEON GYM", Vector3.new(0, 14, 14), FACE_PLUS_Z, PINK, 40, 9)
 
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"
@@ -275,7 +293,7 @@ local function buildLobby(hall)
 	part(hall, "PathPodium", Vector3.new(60, 0.12, 3), CFrame.new(-30, 0.06, 0), PINK, Enum.Material.Neon)
 	part(hall, "PathCenter", Vector3.new(3, 0.12, 45), CFrame.new(0, 0.06, 22), GOLD, Enum.Material.Neon)
 
-	return screen(hall, "TopBoard", Vector3.new(60, 26, 1), CFrame.new(0, 16, MIN_Z + 2), Enum.NormalId.Back, "🏆 ТОП ПО СИЛЕ", 10, GOLD)
+	return screen(hall, "TopBoard", Vector3.new(50, 22, 1), CFrame.new(0, 15, -60), Enum.NormalId.Back, "🏆 ТОП ПО СИЛЕ", 10, GOLD)
 end
 
 local function buildGym(hall)
@@ -284,10 +302,10 @@ local function buildGym(hall)
 	zone(hall, "TitanZone", Vector2.new(350, -55), Vector2.new(50, 90), PINK)
 	zone(hall, "VipZone", Vector2.new(330, 95), Vector2.new(100, 50), GOLD)
 
-	sign(hall, "КАРДИО", Vector3.new(82, 18, 95), FACE_MINUS_X, CARDIO, 30, 6)
-	sign(hall, "СИЛОВАЯ ЗОНА", Vector3.new(82, 18, -37), FACE_MINUS_X, STRENGTH, 40, 6)
-	sign(hall, "ТИТАН", Vector3.new(322, 18, -55), FACE_MINUS_X, PINK, 24, 6)
-	sign(hall, "VIP-ЗАЛ · скоро", Vector3.new(282, 18, 95), FACE_MINUS_X, GOLD, 36, 6)
+	sign(hall, "КАРДИО", Vector3.new(80, 9, 95), FACE_MINUS_X, CARDIO, 30, 6)
+	sign(hall, "СИЛОВАЯ ЗОНА", Vector3.new(80, 9, -37), FACE_MINUS_X, STRENGTH, 40, 6)
+	sign(hall, "ТИТАН", Vector3.new(322, 9, -55), FACE_MINUS_X, PINK, 24, 6)
+	sign(hall, "VIP-ЗАЛ · скоро", Vector3.new(282, 9, 95), FACE_MINUS_X, GOLD, 36, 6)
 end
 
 local function buildPodium(hall)
@@ -347,7 +365,7 @@ local function buildPodium(hall)
 	end
 
 	-- Screen above the carpet with the current posers
-	local stageScreen = screen(hall, "StageScreen", Vector3.new(1, 14, 44), CFrame.new(-200, 30, 0), Enum.NormalId.Right, "🌟 СЕЙЧАС НА ПОДИУМЕ", 3, PINK)
+	local stageScreen = screen(hall, "StageScreen", Vector3.new(1, 14, 44), CFrame.new(-200, 20, 0), Enum.NormalId.Right, "🌟 СЕЙЧАС НА ПОДИУМЕ", 3, PINK)
 
 	return stageScreen
 end
@@ -366,7 +384,7 @@ function World.build()
 	hall.Name = "Hall"
 	hall.Parent = gym
 
-	buildShell(hall)
+	buildField(hall)
 	local topBoard = buildLobby(hall)
 	buildGym(hall)
 	local stageScreen = buildPodium(hall)
