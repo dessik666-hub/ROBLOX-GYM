@@ -15,6 +15,7 @@ local function r(name)
 	return remotes:WaitForChild(name)
 end
 local SyncRemote, RepFxRemote, RunFxRemote, NotifyRemote = r("Sync"), r("RepFx"), r("RunFx"), r("Notify")
+local FameFxRemote = r("FameFx")
 local RepRemote, SetPlatesRemote, SetSpeedRemote, SetAutoRemote, LeaveRemote, RankUpRemote =
 	r("Rep"), r("SetPlates"), r("SetSpeed"), r("SetAuto"), r("Leave"), r("RankUp")
 
@@ -87,9 +88,9 @@ local function addTag(model)
 		return
 	end
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(200, 46)
-	gui.StudsOffset = Vector3.new(0, 6, 0)
-	gui.MaxDistance = 55
+	gui.Size = UDim2.fromOffset(180, 40)
+	gui.StudsOffset = Vector3.new(0, machine.type == "pose" and 9 or 6, 0)
+	gui.MaxDistance = machine.type == "pose" and 60 or 28
 	gui.Adornee = anchor
 	gui.Parent = anchor
 
@@ -112,7 +113,14 @@ local function addTag(model)
 	lock.TextStrokeTransparency = 0.3
 	lock.Parent = gui
 
-	tags[model] = { lock = lock, prompt = anchor:WaitForChild("TrainPrompt", 5), unlock = machine.unlock, machine = machine }
+	local applaudAnchor = model:FindFirstChild("ApplaudAnchor")
+	tags[model] = {
+		lock = lock,
+		prompt = anchor:WaitForChild("TrainPrompt", 5),
+		applaud = applaudAnchor and applaudAnchor:WaitForChild("ApplaudPrompt", 5),
+		unlock = machine.unlock,
+		machine = machine,
+	}
 end
 
 task.spawn(function()
@@ -133,8 +141,18 @@ local function updateTags()
 	local training = state.kind ~= nil
 	for model, tag in pairs(tags) do
 		local unlocked = sila >= tag.unlock
-		local busy = model:GetAttribute("Occupant") ~= nil
-		if not unlocked then
+		local occupantId = model:GetAttribute("Occupant")
+		local busy = occupantId ~= nil
+		if tag.machine.type == "pose" then
+			local occupant = busy and Players:GetPlayerByUserId(occupantId)
+			if occupant then
+				tag.lock.Text = "🌟 " .. occupant.DisplayName
+				tag.lock.TextColor3 = Color3.fromRGB(255, 220, 120)
+			else
+				tag.lock.Text = "Свободно — покажи мышцы!"
+				tag.lock.TextColor3 = Color3.fromRGB(150, 240, 170)
+			end
+		elseif not unlocked then
 			tag.lock.Text = "🔒 Сила " .. Config.format(tag.unlock)
 			tag.lock.TextColor3 = Color3.fromRGB(255, 110, 110)
 		elseif busy then
@@ -148,6 +166,9 @@ local function updateTags()
 		-- Prompts are hidden locally while training or when the machine is taken
 		if tag.prompt then
 			tag.prompt.Enabled = not training and not busy
+		end
+		if tag.applaud then
+			tag.applaud.Enabled = busy and occupantId ~= player.UserId and not training
 		end
 	end
 end
@@ -184,6 +205,15 @@ end)
 RunFxRemote.OnClientEvent:Connect(function(who, gain)
 	if who and who.Character then
 		Popups.show(who.Character, "+" .. Config.format(gain) .. " ❤", Config.StatByKey.stamina.color, who == player)
+	end
+end)
+
+FameFxRemote.OnClientEvent:Connect(function(poser, gain, applauder)
+	if poser and poser.Character then
+		Popups.show(poser.Character, "+" .. Config.format(gain) .. " ⭐", Color3.fromRGB(255, 215, 80), poser == player)
+	end
+	if applauder and applauder.Character then
+		Popups.show(applauder.Character, "👏", Color3.new(1, 1, 1), false)
 	end
 end)
 

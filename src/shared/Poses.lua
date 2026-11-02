@@ -120,4 +120,50 @@ Poses.rower = {
 	end,
 }
 
+---------------------------------------------------------------------------
+-- Podium
+---------------------------------------------------------------------------
+local FLEXES = {
+	{ sL = 90, sR = 90, oL = 90, oR = 90, eL = 100, eR = 100 }, -- double biceps
+	{ sL = 35, sR = 35, oL = 25, oR = 25, eL = 75, eR = 75, w = 12 }, -- most muscular ("crab")
+	{ sL = -15, sR = -15, oL = 45, oR = 45, eL = 95, eR = 95 }, -- front lat spread
+	{ sL = 170, sR = 170, oL = 30, oR = 30, eL = 15, eR = 15 }, -- victory, arms up
+}
+
+local function smooth(x)
+	return x * x * (3 - 2 * x)
+end
+
+-- Cycles through bodybuilding poses, holding each and blending to the next
+Poses.pose = {
+	cycle = function(t)
+		local hold = 2.4
+		local i = math.floor(t / hold)
+		local f = t / hold - i
+		local a = FLEXES[i % #FLEXES + 1]
+		local b = FLEXES[(i + 1) % #FLEXES + 1]
+		local c = f > 0.75 and smooth((f - 0.75) / 0.25) or 0
+		local p = Poses.blend(a, b, c)
+		-- Breathing and a little shake while flexing
+		p.w = (p.w or 0) + math.sin(t * 2) * 2
+		p.eL = (p.eL or 0) + math.sin(t * 23) * 1.5
+		p.eR = (p.eR or 0) + math.sin(t * 23 + 1) * 1.5
+		return p
+	end,
+	phase = function()
+		return 0
+	end,
+}
+
+-- Spectators clapping
+Poses.clap = {
+	cycle = function(t)
+		local s = math.abs(math.sin(t * 7))
+		return { sL = 75, sR = 75, oL = -8 + 25 * s, oR = -8 + 25 * s, eL = 40, eR = 40 }
+	end,
+	phase = function()
+		return 0
+	end,
+}
+
 return Poses

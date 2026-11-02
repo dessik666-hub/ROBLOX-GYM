@@ -208,7 +208,9 @@ function Hud.update(state, plates)
 
 	refs.sila.Text = "🏆 Сила: " .. Config.format(Config.sila(stats))
 	local rank = Config.Ranks[state.rank]
-	refs.rank.Text = rank.title .. (rank.bonus > 0 and ("  ·  +" .. math.floor(rank.bonus * 100 + 0.5) .. "% к росту") or "")
+	refs.rank.Text = rank.title
+		.. (rank.bonus > 0 and ("  ·  +" .. math.floor(rank.bonus * 100 + 0.5) .. "%") or "")
+		.. "  ·  ⭐ " .. Config.format(state.fame or 0)
 
 	local ratio = state.energyMax > 0 and math.clamp(state.energy / state.energyMax, 0, 1) or 0
 	refs.energyFill.Size = UDim2.fromScale(ratio, 1)
@@ -228,6 +230,18 @@ function Hud.update(state, plates)
 	local machine = state.kind and Config.Machines[state.kind]
 	refs.panel.Visible = machine ~= nil
 	if not machine then
+		return
+	end
+
+	if machine.type == "pose" then
+		refs.plateRow.Visible = false
+		refs.speedRow.Visible = false
+		refs.auto.Visible = false
+		refs.title.Text = "🌟 Ты на подиуме! Позы меняются сами"
+		local perTick = math.floor(Config.crowdFame(Config.sila(stats)) * (1 + rank.bonus))
+		refs.rec.Text = "Зрители: +" .. perTick .. " ⭐ каждые " .. Config.CrowdInterval .. " с · игроки аплодируют (F): +" .. Config.ApplauseFame .. " ⭐"
+		refs.rec.TextColor3 = Color3.fromRGB(255, 220, 120)
+		refs.hint.Text = "Больше Силы — громче зал"
 		return
 	end
 

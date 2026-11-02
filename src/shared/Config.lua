@@ -38,7 +38,21 @@ Config.Machines = {
 	squat = { name = "Приседания со штангой", type = "weights", stat = "legs", mult = 2.5, unlock = 80000, repTime = 1.1 },
 	cable = { name = "Кроссовер", type = "weights", stat = "chest", mult = 2.5, unlock = 300000, repTime = 1.0 },
 	titan = { name = "Неоновый комплекс «Титан»", type = "weights", stat = "all", mult = 1.5, unlock = 1500000, repTime = 1.3 },
+	-- Not a machine: a posing spot on the podium stage
+	pose = { name = "Подиум", type = "pose", unlock = 0 },
 }
+
+---------------------------------------------------------------------------
+-- Podium: players pose on stage and earn Слава (fame).
+---------------------------------------------------------------------------
+Config.CrowdInterval = 5 -- NPC spectators applaud every 5 seconds
+Config.ApplauseFame = 5 -- one applause from a real player
+Config.ApplauseCooldown = 3 -- seconds between applause from the same player
+
+-- Bigger muscles, louder crowd: 1 fame at the start, ~8 at 10M Сила
+function Config.crowdFame(sila)
+	return 1 + math.floor(math.log10(math.max(sila, 0) + 1))
+end
 
 ---------------------------------------------------------------------------
 -- Weight plates (bottom bar on weight machines, like in the video).

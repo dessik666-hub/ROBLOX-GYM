@@ -214,6 +214,35 @@ builders.titan = function(model, pivot)
 	return CFrame.new(0, 3.3, 0), CFrame.new(5.5, 3.2, 0)
 end
 
+-- Posing spot on the podium stage: glowing ring, spotlight, applause anchor
+builders.pose = function(model, pivot)
+	local ring = part(model, pivot, "Ring", Vector3.new(0.3, 6, 6), CFrame.new(0, 0.15, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(255, 200, 60), Enum.Material.Neon, Enum.PartType.Cylinder)
+	ring.CanCollide = false
+	ring.Transparency = 0.4
+
+	-- Lamp above and slightly in front of the poser, pointing down
+	local lamp = part(model, pivot, "Spot", Vector3.new(1.6, 1, 1.6), CFrame.new(0, 16, -5), Color3.fromRGB(20, 20, 30), Enum.Material.Metal)
+	lamp.CanCollide = false
+	local light = Instance.new("SpotLight")
+	light.Name = "Light"
+	light.Face = Enum.NormalId.Bottom
+	light.Angle = 55
+	light.Range = 24
+	light.Brightness = 8
+	light.Color = Color3.fromRGB(255, 190, 230)
+	light.Enabled = false
+	light.Parent = lamp
+
+	-- Players in the audience applaud through a prompt here
+	local anchor = part(model, pivot, "ApplaudAnchor", Vector3.new(1, 1, 1), CFrame.new(0, 8, 0), Color3.new(1, 1, 1))
+	anchor.Transparency = 1
+	anchor.CanCollide = false
+	anchor.CanQuery = false
+
+	-- Root sits on the stage; leaving puts the player a few studs in front
+	return CFrame.new(0, 3.2, 0), CFrame.new(0, 3.2, -6)
+end
+
 function MachineModels.build(kind, pivot)
 	local builder = builders[kind]
 	assert(builder, "No builder for machine " .. tostring(kind))

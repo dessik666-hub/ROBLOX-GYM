@@ -1,14 +1,22 @@
--- NPCs: the receptionist who greets players (GDD) and a coach who walks
--- the gym and cheers people on (like the trainers in the reference video).
+-- NPCs:
+--   * receptionist who greets players (GDD)
+--   * coach who walks the gym and cheers people on
+--   * bodybuilders posing on the podium stage (like the reference video)
+--   * spectators clapping along the red carpet
+-- Posing and clapping are animated on clients by TrainAnimator (attribute "Pose").
 
 local Players = game:GetService("Players")
+
+local RS = game:GetService("ReplicatedStorage")
+local Config = require(RS.Shared.Config)
 
 local Npcs = {}
 
 local GREETINGS = {
-	"Привет! Добро пожаловать в Neon Gym!",
-	"Начни с гантелей и беговой дорожки",
+	"Добро пожаловать в Neon Gym!",
+	"Зал справа, подиум слева",
 	"Дорожка качает выносливость — без неё тяжёлый вес не поднять",
+	"Накачался? Иди на подиум и покажи мышцы!",
 	"Тапай по экрану на тренажёре, чтобы делать повторы",
 }
 
@@ -21,18 +29,33 @@ local CHEERS = {
 	"Вот это пампинг!",
 }
 
-local function makeRig(name, shirtColor, position, facing)
+local SKIN = {
+	Color3.fromRGB(234, 184, 146),
+	Color3.fromRGB(204, 142, 105),
+	Color3.fromRGB(160, 105, 75),
+	Color3.fromRGB(110, 72, 52),
+}
+local SHIRTS = {
+	Color3.fromRGB(255, 80, 200),
+	Color3.fromRGB(60, 190, 255),
+	Color3.fromRGB(170, 90, 255),
+	Color3.fromRGB(255, 200, 60),
+	Color3.fromRGB(80, 230, 140),
+}
+
+local function makeRig(name, shirtColor, cf, width)
 	local rig
 	local ok = pcall(function()
 		local desc = Instance.new("HumanoidDescription")
-		desc.HeadColor = Color3.fromRGB(234, 184, 146)
-		desc.LeftArmColor = desc.HeadColor
-		desc.RightArmColor = desc.HeadColor
+		local skin = SKIN[math.random(1, #SKIN)]
+		desc.HeadColor = skin
+		desc.LeftArmColor = skin
+		desc.RightArmColor = skin
 		desc.LeftLegColor = Color3.fromRGB(30, 30, 40)
 		desc.RightLegColor = desc.LeftLegColor
 		desc.TorsoColor = shirtColor
-		desc.WidthScale = 1.3
-		desc.DepthScale = 1.3
+		desc.WidthScale = width or 1.3
+		desc.DepthScale = width or 1.3
 		rig = Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
 	end)
 	if not ok or not rig then
@@ -62,8 +85,15 @@ local function makeRig(name, shirtColor, position, facing)
 		humanoid.DisplayName = name
 		humanoid.NameDisplayDistance = 60
 	end
-	rig:PivotTo(CFrame.lookAt(position, position + facing))
+	rig:PivotTo(cf)
 	return rig
+end
+
+local function anchor(rig)
+	local root = rig:FindFirstChild("HumanoidRootPart")
+	if root then
+		root.Anchored = true
+	end
 end
 
 local function bubble(rig)
@@ -102,22 +132,55 @@ local function bubble(rig)
 	end
 end
 
--- getTrainees() returns a list of { position } for players currently on a machine
-function Npcs.start(parent, getTrainees)
+-- Overhead tag for a podium bodybuilder: Сила and name, like players have
+local function strengthTag(rig, sila)
+	local head = rig:FindFirstChild("Head")
+	local humanoid = rig:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	end
+	if not head then
+		return
+	end
+	local tag = Instance.new("BillboardGui")
+	tag.Size = UDim2.fromOffset(200, 50)
+	tag.StudsOffset = Vector3.new(0, 3, 0)
+	tag.MaxDistance = 120
+	tag.Parent = head
+	local s = Instance.new("TextLabel")
+	s.Size = UDim2.fromScale(1, 0.5)
+	s.BackgroundTransparency = 1
+	s.Text = "🏆 " .. Config.format(sila)
+	s.TextScaled = true
+	s.Font = Enum.Font.GothamBlack
+	s.TextColor3 = Color3.fromRGB(255, 220, 90)
+	s.TextStrokeTransparency = 0.3
+	s.Parent = tag
+	local n = Instance.new("TextLabel")
+	n.Position = UDim2.fromScale(0, 0.5)
+	n.Size = UDim2.fromScale(1, 0.5)
+	n.BackgroundTransparency = 1
+	n.Text = rig.Name
+	n.TextScaled = true
+	n.Font = Enum.Font.GothamBlack
+	n.TextColor3 = Color3.new(1, 1, 1)
+	n.TextStrokeTransparency = 0.3
+	n.Parent = tag
+end
+
+-- layout: from World.build(); getTrainees() returns { { position } } of players on machines
+function Npcs.start(parent, layout, getTrainees)
 	local folder = Instance.new("Folder")
 	folder.Name = "NPCs"
 	folder.Parent = parent
 
 	-- Receptionist behind the desk, facing the spawn
-	local admin = makeRig("Администратор Лана", Color3.fromRGB(255, 80, 200), Vector3.new(0, 3.2, 91), Vector3.new(0, 0, -1))
+	local a = layout.admin
+	local admin = makeRig("Администратор Лана", SHIRTS[1], CFrame.lookAt(a.pos, a.pos + a.facing))
 	admin.Parent = folder
-	local adminRoot = admin:FindFirstChild("HumanoidRootPart")
-	if adminRoot then
-		adminRoot.Anchored = true
-	end
+	anchor(admin)
 	local adminSay = bubble(admin)
 
-	-- Greet each player shortly after they spawn
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function()
 			task.wait(2)
@@ -135,8 +198,31 @@ function Npcs.start(parent, getTrainees)
 		end
 	end)
 
-	-- Coach walks to trainees and cheers
-	local coach = makeRig("Тренер Макс", Color3.fromRGB(60, 190, 255), Vector3.new(0, 3.2, 30), Vector3.new(0, 0, -1))
+	-- Bodybuilders posing on the stage
+	for _, p in ipairs(layout.posers) do
+		local rig = makeRig(p.name, SHIRTS[math.random(1, #SHIRTS)], CFrame.lookAt(p.pos, p.pos + p.facing), 1.7)
+		rig.Parent = folder
+		anchor(rig)
+		rig:SetAttribute("Pose", "pose")
+		strengthTag(rig, p.sila)
+	end
+
+	-- Spectators clapping along the carpet
+	for i, s in ipairs(layout.spectators) do
+		local rig = makeRig("Зритель " .. i, SHIRTS[math.random(1, #SHIRTS)], CFrame.lookAt(s.pos, s.pos + s.facing), 1.0)
+		rig.Parent = folder
+		anchor(rig)
+		rig:SetAttribute("Pose", "clap")
+		local humanoid = rig:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		end
+	end
+
+	-- Coach walks to trainees in the gym and cheers
+	local area = layout.coachArea
+	local start = Vector3.new((area.min.X + area.max.X) / 2, 3.2, 0)
+	local coach = makeRig("Тренер Макс", SHIRTS[2], CFrame.new(start))
 	coach.Parent = folder
 	local coachRoot = coach:FindFirstChild("HumanoidRootPart")
 	local coachHumanoid = coach:FindFirstChildOfClass("Humanoid")
@@ -151,9 +237,9 @@ function Npcs.start(parent, getTrainees)
 			local target
 			if #trainees > 0 then
 				local pick = trainees[math.random(1, #trainees)]
-				target = pick.position + Vector3.new(math.random(-4, 4), 0, 5)
+				target = pick.position + Vector3.new(math.random(-4, 4), 0, 6)
 			else
-				target = Vector3.new(math.random(-40, 40), 3, math.random(-10, 25))
+				target = Vector3.new(math.random(area.min.X, area.max.X), 3, math.random(area.min.Y, area.max.Y))
 			end
 			coachHumanoid:MoveTo(target)
 			coachHumanoid.MoveToFinished:Wait()

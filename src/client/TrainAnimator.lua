@@ -174,11 +174,12 @@ local function stationModel(stationId)
 	return folder and folder:FindFirstChild(stationId)
 end
 
-local function start(character, stationId)
-	local kind = character:GetAttribute("Kind")
+-- character: a player's character or an NPC model. NPCs have no station model.
+local function start(character, stationId, kind)
 	local pose = kind and Poses[kind]
-	local model = stationModel(stationId)
-	if not pose or not model then
+	local isNpc = string.sub(stationId, 1, 4) == "npc:"
+	local model = not isNpc and stationModel(stationId) or nil
+	if not pose or (not isNpc and not model) then
 		return nil -- attributes or model not replicated yet; try next frame
 	end
 
@@ -194,9 +195,10 @@ local function start(character, stationId)
 		belts = {},
 		props = {},
 		isLocal = Players:GetPlayerFromCharacter(character) == localPlayer,
+		offset = math.random() * 20, -- so NPCs don't pose in sync
 	}
 
-	for _, d in ipairs(model:GetDescendants()) do
+	for _, d in ipairs(model and model:GetDescendants() or {}) do
 		if d:IsA("BasePart") then
 			local home = d:GetAttribute("Home")
 			if typeof(home) == "CFrame" then
@@ -257,7 +259,7 @@ local function update(character, st, now)
 	local c
 	if pose.cycle then
 		local speed = character:GetAttribute("RunSpeed") or 3
-		applyPose(st.joints, pose.cycle(now, speed))
+		applyPose(st.joints, pose.cycle(now + st.offset, speed))
 		c = pose.phase(now, speed)
 		for _, b in ipairs(st.belts) do
 			local z = ((b.z0 + c + 3) % 6) - 3
@@ -278,29 +280,47 @@ local function update(character, st, now)
 	end
 end
 
-RunService.PreSimulation:Connect(function()
-	local now = os.clock()
+-- Everyone who should be animated this frame: { model, stationId, kind }
+local function collect()
+	local list = {}
 	for _, player in ipairs(Players:GetPlayers()) do
 		local character = player.Character
-		if character then
-			local stationId = character:GetAttribute("Station")
-			local st = states[character]
-			if stationId then
-				if st and st.stationId ~= stationId then
-					stop(character, st)
-					st = nil
-				end
-				st = st or start(character, stationId)
-				if st then
-					update(character, st, now)
-				end
-			elseif st then
-				stop(character, st)
+		local stationId = character and character:GetAttribute("Station")
+		if stationId then
+			table.insert(list, { character, stationId, character:GetAttribute("Kind") })
+		end
+	end
+	local gym = workspace:FindFirstChild("Gym")
+	local npcs = gym and gym:FindFirstChild("NPCs")
+	if npcs then
+		for _, npc in ipairs(npcs:GetChildren()) do
+			local kind = npc:GetAttribute("Pose")
+			if kind then
+				table.insert(list, { npc, "npc:" .. kind, kind })
 			end
 		end
 	end
+	return list
+end
+
+RunService.PreSimulation:Connect(function()
+	local now = os.clock()
+	local seen = {}
+	for _, entry in ipairs(collect()) do
+		local character, stationId, kind = entry[1], entry[2], entry[3]
+		local st = states[character]
+		if st and st.stationId ~= stationId then
+			stop(character, st)
+			st = nil
+		end
+		st = st or start(character, stationId, kind)
+		if st then
+			update(character, st, now)
+			seen[character] = true
+		end
+	end
 	for character, st in pairs(states) do
-		if not character.Parent then
+		if not seen[character] then
 			stop(character, st)
 		end
 	end

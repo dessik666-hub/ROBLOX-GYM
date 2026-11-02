@@ -45,6 +45,7 @@ function Data.defaultProfile()
 		rank = 1,
 		plates = { 1, 0, 0, 0, 0, 0 },
 		speed = 1,
+		fame = 0,
 	}
 end
 
@@ -75,6 +76,10 @@ local function sanitize(raw)
 		if n >= 1 and n <= Config.MaxPlates then
 			profile.plates = plates
 		end
+	end
+	local fame = tonumber(raw.fame)
+	if fame and fame >= 0 and fame < 1e300 then
+		profile.fame = fame
 	end
 	local speed = tonumber(raw.speed)
 	if speed and Config.Speeds[math.floor(speed)] then
@@ -108,6 +113,7 @@ function Data.save(player, profile)
 		rank = profile.rank,
 		plates = profile.plates,
 		speed = profile.speed,
+		fame = profile.fame,
 	}
 	local ok, err = withRetries(function()
 		store:SetAsync("p_" .. player.UserId, payload)

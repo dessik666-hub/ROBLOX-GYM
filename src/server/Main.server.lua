@@ -29,6 +29,7 @@ end
 local SyncRemote = remote("Sync") -- S->C  own state for the HUD
 local RepFxRemote = remote("RepFx") -- S->all rep happened: animation + popup
 local RunFxRemote = remote("RunFx") -- S->all cardio tick: heart popup
+local FameFxRemote = remote("FameFx") -- S->all podium fame: star popup (+ applauder)
 local NotifyRemote = remote("Notify") -- S->C  toast
 local RepRemote = remote("Rep") -- C->S  tap
 local SetPlatesRemote = remote("SetPlates") -- C->S  plate counts
@@ -82,7 +83,23 @@ end
 ---------------------------------------------------------------------------
 -- Stations
 ---------------------------------------------------------------------------
-local stations = World.build()
+local world = World.build()
+local stations = world.stations
+local poseStations = {}
+for _, station in ipairs(stations) do
+	if station.cfg.type == "pose" then
+		table.insert(poseStations, station)
+	end
+end
+
+local function setSpotlight(station, on)
+	if station.light then
+		station.light.Enabled = on
+	end
+	if station.ring then
+		station.ring.Transparency = on and 0 or 0.4
+	end
+end
 
 local function leaveStation(player, placeOutside)
 	local s = sessions[player]
@@ -92,6 +109,10 @@ local function leaveStation(player, placeOutside)
 	local station = s.station
 	station.occupant = nil
 	station.model:SetAttribute("Occupant", nil)
+	if station.cfg.type == "pose" then
+		setSpotlight(station, false)
+		station.applauded = nil
+	end
 	s.station = nil
 	s.auto = false
 
@@ -116,7 +137,7 @@ local function enterStation(player, station)
 		return
 	end
 	if station.occupant then
-		notify(player, "Тренажёр занят, найди свободный", "warn")
+		notify(player, station.cfg.type == "pose" and "Это место на подиуме занято" or "Тренажёр занят, найди свободный", "warn")
 		return
 	end
 	local sila = Config.sila(s.profile.stats)
@@ -134,6 +155,7 @@ local function enterStation(player, station)
 	s.station = station
 	s.combo = 0
 	s.runAcc = 0
+	s.poseAcc = 0
 
 	humanoid.Sit = false
 	humanoid.PlatformStand = true
@@ -146,16 +168,55 @@ local function enterStation(player, station)
 			s.profile.speed = bestSpeed(s.profile.stats.stamina)
 		end
 		character:SetAttribute("RunSpeed", Config.Speeds[s.profile.speed].mph)
+	elseif station.cfg.type == "pose" then
+		station.applauded = {}
+		setSpotlight(station, true)
+		notify(player, "Ты на подиуме! Зрители дают ⭐ Славу, игроки могут аплодировать", "good")
 	end
 	-- Set Kind before Station: the client starts animating when Station appears
 	character:SetAttribute("Kind", station.kind)
 	character:SetAttribute("Station", station.id)
 end
 
+---------------------------------------------------------------------------
+-- Podium applause: one per spectator per appearance, never for yourself
+---------------------------------------------------------------------------
+local function applaud(player, station)
+	local poser = station.occupant
+	local s = sessions[player]
+	local ps = poser and sessions[poser]
+	if not s or not ps or poser == player then
+		return
+	end
+	if s.station then
+		notify(player, "Сначала сойди с тренажёра", "warn")
+		return
+	end
+	local now = os.clock()
+	if now - (s.lastApplause or 0) < Config.ApplauseCooldown then
+		return
+	end
+	station.applauded = station.applauded or {}
+	if station.applauded[player.UserId] then
+		notify(player, "Ты уже аплодировал этому выходу", "warn")
+		return
+	end
+	station.applauded[player.UserId] = true
+	s.lastApplause = now
+	ps.profile.fame += Config.ApplauseFame
+	FameFxRemote:FireAllClients(poser, Config.ApplauseFame, player)
+	notify(poser, player.DisplayName .. " аплодирует тебе! +" .. Config.ApplauseFame .. " ⭐", "good")
+end
+
 for _, station in ipairs(stations) do
 	station.prompt.Triggered:Connect(function(player)
 		enterStation(player, station)
 	end)
+	if station.applaudPrompt then
+		station.applaudPrompt.Triggered:Connect(function(player)
+			applaud(player, station)
+		end)
+	end
 end
 
 ---------------------------------------------------------------------------
@@ -323,7 +384,55 @@ end)
 ---------------------------------------------------------------------------
 -- Players
 ---------------------------------------------------------------------------
+
+-- Machine poses need elbows and knees, so R6 characters are rebuilt as R15
+local function ensureR15(player, character)
+	local humanoid = character:WaitForChild("Humanoid", 5)
+	if not humanoid or humanoid.RigType == Enum.HumanoidRigType.R15 then
+		return
+	end
+	local ok, desc = pcall(function()
+		return Players:GetHumanoidDescriptionFromUserId(math.max(player.UserId, 1))
+	end)
+	if not ok or not desc then
+		desc = Instance.new("HumanoidDescription")
+	end
+	local built, newCharacter = pcall(function()
+		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+	end)
+	if not built or not newCharacter or character.Parent == nil then
+		warn("[R15] Could not rebuild character for", player.Name)
+		return
+	end
+	newCharacter.Name = player.Name
+	local pivot = character:GetPivot()
+	player.Character = newCharacter
+	newCharacter:PivotTo(pivot)
+	newCharacter.Parent = workspace
+	character:Destroy()
+end
+
+local function makeLeaderstats(player)
+	local folder = Instance.new("Folder")
+	folder.Name = "leaderstats"
+	local sila = Instance.new("IntValue")
+	sila.Name = "Сила"
+	sila.Parent = folder
+	local fame = Instance.new("IntValue")
+	fame.Name = "Слава"
+	fame.Parent = folder
+	folder.Parent = player
+	return sila, fame
+end
+
 local function onPlayerAdded(player)
+	player.CharacterAdded:Connect(function(character)
+		ensureR15(player, character)
+	end)
+	if player.Character then
+		task.spawn(ensureR15, player, player.Character)
+	end
+
 	local profile, canSave = Data.load(player)
 	if not player.Parent then
 		return
@@ -339,8 +448,13 @@ local function onPlayerAdded(player)
 		nextAuto = 0,
 		runAcc = 0,
 		idle = 0,
+		poseAcc = 0,
+		lastApplause = 0,
 		lastNotify = {},
 	}
+	local silaValue, fameValue = makeLeaderstats(player)
+	sessions[player].leaderSila = silaValue
+	sessions[player].leaderFame = fameValue
 	if not canSave and not Data.isStudio then
 		notify(player, "Не удалось загрузить прогресс — он не будет сохранён в этой сессии", "warn")
 	end
@@ -406,6 +520,7 @@ local function snapshot(s)
 		combo = s.combo,
 		auto = s.auto,
 		kind = s.station and s.station.kind or nil,
+		fame = s.profile.fame,
 	}
 end
 
@@ -432,6 +547,16 @@ RunService.Heartbeat:Connect(function(dt)
 					s.runAcc -= 1
 					cardioTick(player, s)
 				end
+			elseif s.station.cfg.type == "pose" then
+				-- NPC spectators applaud: bigger muscles, more fame
+				s.poseAcc += dt
+				if s.poseAcc >= Config.CrowdInterval then
+					s.poseAcc -= Config.CrowdInterval
+					local sila = Config.sila(s.profile.stats)
+					local gain = math.floor(Config.crowdFame(sila) * (1 + rankBonus(s)))
+					s.profile.fame += gain
+					FameFxRemote:FireAllClients(player, gain, nil)
+				end
 			elseif s.auto and now >= s.nextAuto then
 				s.nextAuto = now + Config.AutoInterval
 				doRep(player, true)
@@ -452,17 +577,59 @@ RunService.Heartbeat:Connect(function(dt)
 		bodyAcc = 0
 		for player, s in pairs(sessions) do
 			Body.update(player, s.profile)
+			if s.leaderSila then
+				s.leaderSila.Value = math.floor(Config.sila(s.profile.stats))
+				s.leaderFame.Value = math.floor(s.profile.fame)
+			end
 		end
+	end
+end)
+
+---------------------------------------------------------------------------
+-- Screens: who is on the podium now, and the server's top by Сила
+---------------------------------------------------------------------------
+local function updateScreens()
+	for i, station in ipairs(poseStations) do
+		local line = world.stageScreen.lines[i]
+		if line then
+			local poser = station.occupant
+			local s = poser and sessions[poser]
+			if s then
+				line.Text = string.format("%d. %s — 🏆 %s · ⭐ %s", i, poser.DisplayName, Config.format(Config.sila(s.profile.stats)), Config.format(s.profile.fame))
+			else
+				line.Text = i .. ". Свободно — выходи и покажи мышцы!"
+			end
+		end
+	end
+
+	local list = {}
+	for player, s in pairs(sessions) do
+		table.insert(list, { player = player, sila = Config.sila(s.profile.stats), fame = s.profile.fame })
+	end
+	table.sort(list, function(a, b)
+		return a.sila > b.sila
+	end)
+	for i, line in ipairs(world.topBoard.lines) do
+		local e = list[i]
+		line.Text = e and string.format("%d. %s — 🏆 %s   ⭐ %s", i, e.player.DisplayName, Config.format(e.sila), Config.format(e.fame)) or ""
+	end
+end
+
+task.spawn(function()
+	while true do
+		updateScreens()
+		task.wait(2)
 	end
 end)
 
 ---------------------------------------------------------------------------
 -- NPCs
 ---------------------------------------------------------------------------
-Npcs.start(workspace:WaitForChild("Gym"), function()
+Npcs.start(workspace:WaitForChild("Gym"), world.npcLayout, function()
+	-- The coach only visits people in the gym, not on the podium
 	local list = {}
 	for _, station in ipairs(stations) do
-		if station.occupant then
+		if station.occupant and station.cfg.type ~= "pose" then
 			table.insert(list, { position = station.rootCF.Position })
 		end
 	end

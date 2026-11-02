@@ -53,7 +53,7 @@ function Body.update(player, profile)
 	local tag = getTag(character)
 	if tag then
 		tag.Sila.Text = "🏆 " .. Config.format(sila)
-		tag.Rank.Text = Config.Ranks[profile.rank].title
+		tag.Rank.Text = Config.Ranks[profile.rank].title .. "  ·  ⭐ " .. Config.format(profile.fame or 0)
 		tag.PlayerName.Text = player.DisplayName
 	end
 
