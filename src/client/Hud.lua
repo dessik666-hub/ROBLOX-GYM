@@ -6,18 +6,32 @@ local RS = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(RS:WaitForChild("Shared"):WaitForChild("Config"))
+local Strings = require(RS.Shared:WaitForChild("Strings"))
 
 local Hud = {}
 
-local BG = Color3.fromRGB(20, 12, 36)
-local CARD = Color3.fromRGB(45, 28, 75)
-local CARD_LOCKED = Color3.fromRGB(30, 26, 40)
-local ACCENT = Color3.fromRGB(255, 80, 200)
+local BG = Color3.fromRGB(18, 17, 24)
+local CARD = Color3.fromRGB(42, 40, 54)
+local CARD_LOCKED = Color3.fromRGB(28, 27, 34)
+local ACCENT = Color3.fromRGB(139, 32, 255)
 local GOOD = Color3.fromRGB(90, 240, 140)
 local BAD = Color3.fromRGB(255, 80, 90)
 
 local refs = {}
 local callbacks = {}
+local lang = "en"
+
+local function L(key, ...)
+	return Strings.t(lang, key, ...)
+end
+
+function Hud.setLanguage(newLang)
+	lang = newLang
+end
+
+function Hud.text(key, ...)
+	return L(key, ...)
+end
 
 ---------------------------------------------------------------------------
 -- Small builders
@@ -96,9 +110,11 @@ function Hud.build(cb)
 		stroke(chip, s.color, 1.5)
 		local value = label(chip, { Size = UDim2.fromScale(1, 0.62), Text = s.icon .. " 0", TextColor3 = s.color, Font = Enum.Font.GothamBlack })
 		maxText(value, 20)
-		local name = label(chip, { Position = UDim2.fromScale(0, 0.6), Size = UDim2.fromScale(1, 0.36), Text = s.name, TextColor3 = Color3.fromRGB(210, 200, 230) })
+		local name = label(chip, { Position = UDim2.fromScale(0, 0.6), Size = UDim2.fromScale(1, 0.36), Text = s.name, TextColor3 = Color3.fromRGB(210, 205, 225) })
 		maxText(name, 12)
 		refs.chips[s.key] = value
+		refs.chipNames = refs.chipNames or {}
+		refs.chipNames[s.key] = name
 	end
 
 	-- Left panel: Сила, rank, stamina, combo, rank-up
@@ -106,8 +122,8 @@ function Hud.build(cb)
 	corner(left, 12)
 	stroke(left, ACCENT, 1.5)
 	new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6) }, left)
-	refs.sila = label(left, { Size = UDim2.new(1, 0, 0, 30), Text = "🏆 Сила: 0", TextColor3 = Color3.fromRGB(255, 220, 90), Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Left })
-	refs.rank = label(left, { Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 0, 0, 18), Text = "Новичок", TextColor3 = Color3.fromRGB(200, 170, 255), TextXAlignment = Enum.TextXAlignment.Left })
+	refs.sila = label(left, { Size = UDim2.new(1, 0, 0, 30), Text = "🏆 0", TextColor3 = Color3.fromRGB(255, 220, 90), Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Left })
+	refs.rank = label(left, { Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 0, 0, 18), Text = "", TextColor3 = Color3.fromRGB(200, 170, 255), TextXAlignment = Enum.TextXAlignment.Left })
 	local energyBack = new("Frame", { Position = UDim2.fromOffset(0, 54), Size = UDim2.new(1, 0, 0, 20), BackgroundColor3 = Color3.fromRGB(50, 20, 35) }, left)
 	corner(energyBack, 10)
 	refs.energyFill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(255, 70, 110) }, energyBack)
@@ -116,7 +132,7 @@ function Hud.build(cb)
 	maxText(refs.energyText, 14)
 	refs.combo = label(left, { Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 20), Text = "", TextColor3 = Color3.fromRGB(255, 230, 120), TextXAlignment = Enum.TextXAlignment.Left })
 	refs.nextRank = label(left, { Position = UDim2.fromOffset(0, 100), Size = UDim2.new(1, 0, 0, 14), Text = "", TextColor3 = Color3.fromRGB(170, 160, 200), Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left })
-	refs.rankUp = button(left, { Position = UDim2.fromOffset(0, 116), Size = UDim2.new(1, 0, 0, 26), Text = "⬆ Повысить ранг", BackgroundColor3 = Color3.fromRGB(40, 170, 90), Visible = false }, function()
+	refs.rankUp = button(left, { Position = UDim2.fromOffset(0, 116), Size = UDim2.new(1, 0, 0, 26), Text = "⬆", BackgroundColor3 = Color3.fromRGB(40, 170, 90), Visible = false }, function()
 		callbacks.rankUp()
 	end)
 
@@ -165,9 +181,9 @@ function Hud.build(cb)
 		new("UIAspectRatioConstraint", { AspectRatio = 1 }, disc)
 		corner(disc, 100)
 		stroke(disc, Color3.fromRGB(230, 230, 240), 1)
-		local w = label(card, { Position = UDim2.fromScale(0, 0.74), Size = UDim2.fromScale(1, 0.24), Text = plate.weight .. " фунт.", TextColor3 = Color3.fromRGB(220, 210, 240) })
+		local w = label(card, { Position = UDim2.fromScale(0, 0.74), Size = UDim2.fromScale(1, 0.24), Text = plate.weight .. " lb", TextColor3 = Color3.fromRGB(220, 215, 235) })
 		maxText(w, 14)
-		refs.plates[i] = { count = count, stroke = cardStroke }
+		refs.plates[i] = { count = count, stroke = cardStroke, weightLabel = w }
 	end
 
 	-- Speed row (cardio)
@@ -175,7 +191,7 @@ function Hud.build(cb)
 	new("UIGridLayout", { CellSize = UDim2.new(0.2, -6, 0.5, -4), CellPadding = UDim2.fromOffset(6, 6), HorizontalAlignment = Enum.HorizontalAlignment.Center }, refs.speedRow)
 	refs.speeds = {}
 	for i, sp in ipairs(Config.Speeds) do
-		refs.speeds[i] = button(refs.speedRow, { Text = sp.mph .. " миль/ч", LayoutOrder = i }, function()
+		refs.speeds[i] = button(refs.speedRow, { Text = sp.mph .. " mph", LayoutOrder = i }, function()
 			callbacks.speed(i)
 		end)
 		maxText(refs.speeds[i], 16)
@@ -184,16 +200,30 @@ function Hud.build(cb)
 	-- Controls
 	local controls = new("Frame", { Position = UDim2.fromOffset(0, 144), Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1 }, panel)
 	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 8), VerticalAlignment = Enum.VerticalAlignment.Center }, controls)
-	refs.hint = label(controls, { Size = UDim2.new(0.42, 0, 1, 0), Text = "Тапай по экрану — повтор", TextColor3 = Color3.fromRGB(200, 190, 230), LayoutOrder = 1 })
+	refs.hint = label(controls, { Size = UDim2.new(0.42, 0, 1, 0), Text = "", TextColor3 = Color3.fromRGB(205, 200, 225), LayoutOrder = 1 })
 	maxText(refs.hint, 16)
-	refs.auto = button(controls, { Size = UDim2.new(0.25, 0, 1, 0), Text = "Авто: выкл", LayoutOrder = 2 }, function()
+	refs.auto = button(controls, { Size = UDim2.new(0.25, 0, 1, 0), Text = "Auto", LayoutOrder = 2 }, function()
 		callbacks.auto()
 	end)
 	maxText(refs.auto, 16)
-	local exit = button(controls, { Size = UDim2.new(0.25, 0, 1, 0), Text = "Выйти (Q)", BackgroundColor3 = Color3.fromRGB(170, 40, 70), LayoutOrder = 3 }, function()
+	local exit = button(controls, { Size = UDim2.new(0.25, 0, 1, 0), Text = "Leave (Q)", BackgroundColor3 = Color3.fromRGB(170, 40, 70), LayoutOrder = 3 }, function()
 		callbacks.leave()
 	end)
 	maxText(exit, 16)
+	refs.exit = exit
+
+	-- Language switch (top right, under the Roblox buttons)
+	refs.lang = button(gui, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -10, 0, 64),
+		Size = UDim2.fromOffset(78, 32),
+		Text = "🌐 EN",
+		BackgroundColor3 = BG,
+	}, function()
+		callbacks.lang()
+	end)
+	stroke(refs.lang, ACCENT, 1.5)
+	maxText(refs.lang, 16)
 end
 
 ---------------------------------------------------------------------------
@@ -204,25 +234,32 @@ function Hud.update(state, plates)
 
 	for _, s in ipairs(Config.Stats) do
 		refs.chips[s.key].Text = s.icon .. " " .. Config.format(stats[s.key])
+		refs.chipNames[s.key].Text = L("stat." .. s.key)
+	end
+	refs.lang.Text = L("hud.lang")
+	refs.exit.Text = L("hud.leave")
+	refs.rankUp.Text = L("hud.rankUp")
+	for i, r in ipairs(refs.plates) do
+		r.weightLabel.Text = Config.Plates[i].weight .. " " .. L("hud.lb")
 	end
 
-	refs.sila.Text = "🏆 Сила: " .. Config.format(Config.sila(stats))
+	refs.sila.Text = L("hud.strength", Config.format(Config.sila(stats)))
 	local rank = Config.Ranks[state.rank]
-	refs.rank.Text = rank.title
-		.. (rank.bonus > 0 and ("  ·  +" .. math.floor(rank.bonus * 100 + 0.5) .. "%") or "")
+	refs.rank.Text = L("rank." .. state.rank)
+		.. (rank.bonus > 0 and ("  ·  " .. L("hud.rankBonus", math.floor(rank.bonus * 100 + 0.5))) or "")
 		.. "  ·  ⭐ " .. Config.format(state.fame or 0)
 
 	local ratio = state.energyMax > 0 and math.clamp(state.energy / state.energyMax, 0, 1) or 0
 	refs.energyFill.Size = UDim2.fromScale(ratio, 1)
 	refs.energyText.Text = "❤ " .. Config.format(state.energy) .. " / " .. Config.format(state.energyMax)
 
-	refs.combo.Text = state.combo > 0 and ("⚡ Пампинг +" .. math.floor(state.combo * 100 + 0.5) .. "%") or ""
+	refs.combo.Text = state.combo > 0 and L("hud.combo", math.floor(state.combo * 100 + 0.5)) or ""
 
 	local nextRank = Config.Ranks[state.rank + 1]
 	if nextRank then
-		refs.nextRank.Text = "След.: " .. nextRank.title .. " — мышцы " .. Config.format(nextRank.muscle) .. ", ❤ " .. Config.format(nextRank.stamina)
+		refs.nextRank.Text = L("hud.next", L("rank." .. (state.rank + 1)), Config.format(nextRank.muscle), Config.format(nextRank.stamina))
 	else
-		refs.nextRank.Text = "Максимальный ранг!"
+		refs.nextRank.Text = L("hud.maxRank")
 	end
 	refs.rankUp.Visible = Config.canRankUp(stats, state.rank)
 
@@ -237,29 +274,30 @@ function Hud.update(state, plates)
 		refs.plateRow.Visible = false
 		refs.speedRow.Visible = false
 		refs.auto.Visible = false
-		refs.title.Text = "🌟 Ты на подиуме! Позы меняются сами"
+		refs.title.Text = L("hud.poseTitle")
 		local perTick = math.floor(Config.crowdFame(Config.sila(stats)) * (1 + rank.bonus))
-		refs.rec.Text = "Зрители: +" .. perTick .. " ⭐ каждые " .. Config.CrowdInterval .. " с · игроки аплодируют (F): +" .. Config.ApplauseFame .. " ⭐"
+		refs.rec.Text = L("hud.poseInfo", perTick, Config.CrowdInterval, Config.ApplauseFame)
 		refs.rec.TextColor3 = Color3.fromRGB(255, 220, 120)
-		refs.hint.Text = "Больше Силы — громче зал"
+		refs.hint.Text = L("hud.poseHint")
 		return
 	end
 
-	local stat = machine.stat == "all" and { icon = "🔥", name = "все мышцы" } or Config.StatByKey[machine.stat]
+	local stat = machine.stat == "all" and { icon = "🔥" } or Config.StatByKey[machine.stat]
+	local machineName = L("machine." .. state.kind)
 	local have = Config.machineStat(stats, machine)
 
 	if machine.type == "weights" then
 		refs.plateRow.Visible = true
 		refs.speedRow.Visible = false
-		refs.hint.Text = "Тапай по экрану — повтор"
+		refs.hint.Text = L("hud.tapHint")
 		refs.auto.Visible = true
-		refs.auto.Text = state.auto and "Авто: вкл" or "Авто: выкл"
+		refs.auto.Text = state.auto and L("hud.autoOn") or L("hud.autoOff")
 		refs.auto.BackgroundColor3 = state.auto and Color3.fromRGB(40, 170, 90) or CARD
 
 		local weight = Config.totalWeight(plates)
 		local req = Config.requirement(weight)
-		refs.title.Text = machine.name .. " · " .. weight .. " фунт. · ❤ −" .. Config.repCost(weight) .. " за повтор"
-		refs.rec.Text = "Рекомендуется: " .. stat.icon .. " " .. Config.format(req) .. "  (у тебя " .. Config.format(have) .. ")"
+		refs.title.Text = L("hud.weightTitle", machineName, weight, Config.repCost(weight))
+		refs.rec.Text = L("hud.recommended", stat.icon, Config.format(req), Config.format(have))
 		refs.rec.TextColor3 = have >= req and GOOD or BAD
 		for i, r in ipairs(refs.plates) do
 			local n = plates[i] or 0
@@ -269,13 +307,13 @@ function Hud.update(state, plates)
 	else
 		refs.plateRow.Visible = false
 		refs.speedRow.Visible = true
-		refs.hint.Text = "Бег качает ❤ выносливость"
+		refs.hint.Text = L("hud.runHint")
 		refs.auto.Visible = false
 
 		local sp = Config.Speeds[state.speed]
 		local gain = sp.gain * machine.mult * (1 + rank.bonus)
-		refs.title.Text = machine.name .. " · " .. sp.mph .. " миль/ч · +" .. Config.format(gain) .. " ❤ в сек."
-		refs.rec.Text = "Рекомендуется: ❤ " .. Config.format(sp.req) .. "  (у тебя " .. Config.format(stats.stamina) .. ")"
+		refs.title.Text = L("hud.cardioTitle", machineName, sp.mph, Config.format(gain))
+		refs.rec.Text = L("hud.recommended", "❤", Config.format(sp.req), Config.format(stats.stamina))
 		refs.rec.TextColor3 = stats.stamina >= sp.req and GOOD or BAD
 		for i, b in ipairs(refs.speeds) do
 			local s = Config.Speeds[i]
@@ -285,7 +323,7 @@ function Hud.update(state, plates)
 			else
 				b.BackgroundColor3 = locked and CARD_LOCKED or CARD
 			end
-			b.Text = locked and ("🔒 " .. s.mph .. " · ❤" .. Config.format(s.req)) or (s.mph .. " миль/ч")
+			b.Text = locked and L("hud.speedLocked", s.mph, Config.format(s.req)) or L("hud.speed", s.mph)
 		end
 	end
 end

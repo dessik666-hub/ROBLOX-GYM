@@ -1,4 +1,5 @@
 -- All tuning for Neon Gym Simulator lives here.
+-- Names here are English defaults; player-facing text is localized in Strings.lua.
 -- Numbers are first guesses and need a playtest (see README).
 
 local Config = {}
@@ -7,12 +8,12 @@ local Config = {}
 -- Stats. Order matches the top bar in the reference video.
 ---------------------------------------------------------------------------
 Config.Stats = {
-	{ key = "stamina", name = "Выносливость", icon = "❤", color = Color3.fromRGB(255, 70, 110) },
-	{ key = "chest", name = "Грудь", icon = "🛡", color = Color3.fromRGB(90, 230, 140) },
-	{ key = "abs", name = "Пресс", icon = "🍫", color = Color3.fromRGB(255, 200, 90) },
-	{ key = "back", name = "Спина", icon = "🦾", color = Color3.fromRGB(90, 170, 255) },
-	{ key = "arms", name = "Руки", icon = "💪", color = Color3.fromRGB(255, 120, 60) },
-	{ key = "legs", name = "Ноги", icon = "🦵", color = Color3.fromRGB(220, 90, 255) },
+	{ key = "stamina", name = "Stamina", icon = "❤", color = Color3.fromRGB(255, 70, 110) },
+	{ key = "chest", name = "Chest", icon = "🛡", color = Color3.fromRGB(90, 230, 140) },
+	{ key = "abs", name = "Abs", icon = "🍫", color = Color3.fromRGB(255, 200, 90) },
+	{ key = "back", name = "Back", icon = "🦾", color = Color3.fromRGB(90, 170, 255) },
+	{ key = "arms", name = "Arms", icon = "💪", color = Color3.fromRGB(255, 120, 60) },
+	{ key = "legs", name = "Legs", icon = "🦵", color = Color3.fromRGB(220, 90, 255) },
 }
 
 Config.StatByKey = {}
@@ -28,18 +29,18 @@ Config.Muscles = { "chest", "abs", "back", "arms", "legs" }
 -- mult = gain multiplier of this machine. repTime = animation length, seconds.
 ---------------------------------------------------------------------------
 Config.Machines = {
-	dumbbells = { name = "Гантели", type = "weights", stat = "arms", mult = 1, unlock = 0, repTime = 0.8 },
-	treadmill = { name = "Беговая дорожка", type = "cardio", stat = "stamina", mult = 1, unlock = 0 },
-	bench = { name = "Скамья для жима", type = "weights", stat = "chest", mult = 1, unlock = 150, repTime = 0.8 },
-	abs = { name = "Скамья для пресса", type = "weights", stat = "abs", mult = 1, unlock = 600, repTime = 0.9 },
-	legpress = { name = "Жим ногами", type = "weights", stat = "legs", mult = 1, unlock = 2000, repTime = 0.9 },
-	pulldown = { name = "Тяга верхнего блока", type = "weights", stat = "back", mult = 1, unlock = 6000, repTime = 1.0 },
-	rower = { name = "Гребной тренажёр", type = "cardio", stat = "stamina", mult = 2, unlock = 20000 },
-	squat = { name = "Приседания со штангой", type = "weights", stat = "legs", mult = 2.5, unlock = 80000, repTime = 1.1 },
-	cable = { name = "Кроссовер", type = "weights", stat = "chest", mult = 2.5, unlock = 300000, repTime = 1.0 },
-	titan = { name = "Неоновый комплекс «Титан»", type = "weights", stat = "all", mult = 1.5, unlock = 1500000, repTime = 1.3 },
+	dumbbells = { name = "Dumbbells", type = "weights", stat = "arms", mult = 1, unlock = 0, repTime = 0.8 },
+	treadmill = { name = "Treadmill", type = "cardio", stat = "stamina", mult = 1, unlock = 0 },
+	bench = { name = "Bench Press", type = "weights", stat = "chest", mult = 1, unlock = 150, repTime = 0.8 },
+	abs = { name = "Ab Bench", type = "weights", stat = "abs", mult = 1, unlock = 600, repTime = 0.9 },
+	legpress = { name = "Leg Press", type = "weights", stat = "legs", mult = 1, unlock = 2000, repTime = 0.9 },
+	pulldown = { name = "Lat Pulldown", type = "weights", stat = "back", mult = 1, unlock = 6000, repTime = 1.0 },
+	rower = { name = "Rowing Machine", type = "cardio", stat = "stamina", mult = 2, unlock = 20000 },
+	squat = { name = "Barbell Squat", type = "weights", stat = "legs", mult = 2.5, unlock = 80000, repTime = 1.1 },
+	cable = { name = "Cable Crossover", type = "weights", stat = "chest", mult = 2.5, unlock = 300000, repTime = 1.0 },
+	titan = { name = "Titan Rig", type = "weights", stat = "all", mult = 1.5, unlock = 1500000, repTime = 1.3 },
 	-- Not a machine: a posing spot on the podium stage
-	pose = { name = "Подиум", type = "pose", unlock = 0 },
+	pose = { name = "Podium", type = "pose", unlock = 0 },
 }
 
 ---------------------------------------------------------------------------
@@ -145,14 +146,14 @@ Config.SweetBonus = 0.5 -- ...gives +50% to the rep
 -- Simulated perfect play: max rank in ~4 h (6-8 h of real play, as in the GDD).
 ---------------------------------------------------------------------------
 Config.Ranks = {
-	{ title = "Новичок", muscle = 0, stamina = 0, bonus = 0 },
-	{ title = "Начинающий", muscle = 50, stamina = 20, bonus = 0.1 },
-	{ title = "Любитель", muscle = 500, stamina = 150, bonus = 0.2 },
-	{ title = "Сильный парень", muscle = 5000, stamina = 800, bonus = 0.3 },
-	{ title = "Атлет", muscle = 25000, stamina = 2500, bonus = 0.4 },
-	{ title = "Качок", muscle = 150000, stamina = 8000, bonus = 0.5 },
-	{ title = "Чемпион зала", muscle = 800000, stamina = 25000, bonus = 0.6 },
-	{ title = "Неоновый титан", muscle = 4000000, stamina = 80000, bonus = 0.8 },
+	{ title = "Rookie", muscle = 0, stamina = 0, bonus = 0 },
+	{ title = "Beginner", muscle = 50, stamina = 20, bonus = 0.1 },
+	{ title = "Amateur", muscle = 500, stamina = 150, bonus = 0.2 },
+	{ title = "Strong Guy", muscle = 5000, stamina = 800, bonus = 0.3 },
+	{ title = "Athlete", muscle = 25000, stamina = 2500, bonus = 0.4 },
+	{ title = "Bodybuilder", muscle = 150000, stamina = 8000, bonus = 0.5 },
+	{ title = "Gym Champion", muscle = 800000, stamina = 25000, bonus = 0.6 },
+	{ title = "Neon Titan", muscle = 4000000, stamina = 80000, bonus = 0.8 },
 }
 
 function Config.rankRequirement(rankIndex, statKey)

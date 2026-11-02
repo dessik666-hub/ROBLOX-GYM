@@ -213,19 +213,19 @@ Looks.cast = {
 		look = { skin = SKIN.medium, top = C(40, 110, 230), sleeves = true, bottom = C(30, 70, 170), shoes = C(245, 245, 250), hair = "buzz", hairColor = C(25, 20, 18), hat = "cap", hatColor = C(230, 40, 60), whistle = true, mustache = true },
 	},
 	posers = {
-		["Рекс"] = {
+		["Rex"] = {
 			build = { width = 1.7, height = 1.05 },
 			look = { skin = SKIN.tan, top = C(25, 25, 30), bottom = C(220, 40, 60), shorts = true, shoes = C(20, 20, 25), hair = "mohawk", hairColor = C(80, 255, 140), glasses = C(255, 80, 200), bands = C(80, 255, 140) },
 		},
-		["Бетон"] = {
+		["Brick"] = {
 			build = { width = 1.9, height = 1.08 },
 			look = { skin = SKIN.dark, top = C(120, 120, 130), bottom = C(30, 40, 90), shorts = true, shoes = C(230, 230, 235), beard = true, hairColor = C(20, 15, 12), chain = true },
 		},
-		["Молния"] = {
+		["Bolt"] = {
 			build = { width = 1.6, height = 1.0 },
 			look = { skin = SKIN.light, top = C(255, 215, 40), bottom = C(20, 20, 25), shorts = true, shoes = C(255, 215, 40), hair = "flattop", hairColor = C(250, 225, 120), hat = "headband", hatColor = C(60, 190, 255), bands = C(60, 190, 255) },
 		},
-		["Гриф"] = {
+		["Griff"] = {
 			build = { width = 1.8, height = 1.04 },
 			look = { skin = SKIN.brown, top = C(150, 70, 230), bottom = C(15, 15, 20), shorts = true, shoes = C(150, 70, 230), hair = "bun", hairColor = C(15, 12, 10), beard = true, belt = true },
 		},

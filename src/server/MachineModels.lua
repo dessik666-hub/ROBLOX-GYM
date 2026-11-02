@@ -11,11 +11,12 @@
 
 local MachineModels = {}
 
-local METAL = Color3.fromRGB(45, 45, 60)
-local PAD = Color3.fromRGB(70, 35, 110)
-local NEON_PURPLE = Color3.fromRGB(170, 90, 255)
-local NEON_BLUE = Color3.fromRGB(60, 190, 255)
-local NEON_PINK = Color3.fromRGB(255, 80, 200)
+-- Equipment style: black matte metal, black pads, purple indicators, cyan displays
+local METAL = Color3.fromRGB(30, 30, 36)
+local PAD = Color3.fromRGB(26, 25, 31)
+local NEON_PURPLE = Color3.fromRGB(139, 32, 255)
+local NEON_BLUE = Color3.fromRGB(53, 217, 255) -- cyan displays
+local NEON_PINK = NEON_PURPLE -- accents are purple only
 
 local function part(model, pivot, name, size, rel, color, material, shape)
 	local p = Instance.new("Part")
@@ -41,14 +42,14 @@ local function setLift(p, lift)
 	return p
 end
 
-local function mat(model, pivot, w, d, color)
-	part(model, pivot, "Mat", Vector3.new(w, 0.2, d), CFrame.new(0, 0.1, 0), Color3.fromRGB(25, 20, 40), Enum.Material.SmoothPlastic)
-	-- neon outline
-	local c = color or NEON_PURPLE
-	part(model, pivot, "Edge", Vector3.new(w, 0.25, 0.15), CFrame.new(0, 0.12, -d / 2), c, Enum.Material.Neon)
-	part(model, pivot, "Edge", Vector3.new(w, 0.25, 0.15), CFrame.new(0, 0.12, d / 2), c, Enum.Material.Neon)
-	part(model, pivot, "Edge", Vector3.new(0.15, 0.25, d), CFrame.new(-w / 2, 0.12, 0), c, Enum.Material.Neon)
-	part(model, pivot, "Edge", Vector3.new(0.15, 0.25, d), CFrame.new(w / 2, 0.12, 0), c, Enum.Material.Neon)
+-- Rubber floor mat with a subtle grey border (purple stays an accent, not a frame)
+local function mat(model, pivot, w, d, _color)
+	part(model, pivot, "Mat", Vector3.new(w, 0.2, d), CFrame.new(0, 0.1, 0), Color3.fromRGB(24, 24, 28), Enum.Material.Rubber)
+	local c = Color3.fromRGB(72, 70, 82)
+	part(model, pivot, "Edge", Vector3.new(w, 0.24, 0.15), CFrame.new(0, 0.12, -d / 2), c, Enum.Material.SmoothPlastic)
+	part(model, pivot, "Edge", Vector3.new(w, 0.24, 0.15), CFrame.new(0, 0.12, d / 2), c, Enum.Material.SmoothPlastic)
+	part(model, pivot, "Edge", Vector3.new(0.15, 0.24, d), CFrame.new(-w / 2, 0.12, 0), c, Enum.Material.SmoothPlastic)
+	part(model, pivot, "Edge", Vector3.new(0.15, 0.24, d), CFrame.new(w / 2, 0.12, 0), c, Enum.Material.SmoothPlastic)
 end
 
 -- Barbell along X with two plates. All parts share the same Lift.
@@ -205,10 +206,11 @@ builders.titan = function(model, pivot)
 		for _, z in ipairs({ -4, 4 }) do
 			part(model, pivot, "Pillar", Vector3.new(0.6, 10, 0.6), CFrame.new(x, 5, z), METAL)
 		end
-		part(model, pivot, "TopBeam", Vector3.new(0.5, 0.5, 8.6), CFrame.new(x, 10, 0), NEON_PINK, Enum.Material.Neon)
+		part(model, pivot, "TopBeam", Vector3.new(0.6, 0.6, 8.6), CFrame.new(x, 10, 0), METAL)
+		part(model, pivot, "TopGlow", Vector3.new(0.2, 0.2, 8.6), CFrame.new(x, 9.65, 0), NEON_PURPLE, Enum.Material.Neon)
 	end
-	part(model, pivot, "TopBeam", Vector3.new(8.6, 0.5, 0.5), CFrame.new(0, 10, -4), NEON_PINK, Enum.Material.Neon)
-	part(model, pivot, "TopBeam", Vector3.new(8.6, 0.5, 0.5), CFrame.new(0, 10, 4), NEON_PINK, Enum.Material.Neon)
+	part(model, pivot, "TopBeam", Vector3.new(8.6, 0.6, 0.6), CFrame.new(0, 10, -4), METAL)
+	part(model, pivot, "TopBeam", Vector3.new(8.6, 0.6, 0.6), CFrame.new(0, 10, 4), METAL)
 	-- Rest: bar at the shoulders in a squat. Peak: overhead.
 	barbell(model, pivot, CFrame.new(0, 3.7, -0.5), 7.5, CFrame.new(0, 3.3, 0.4), NEON_PURPLE)
 	return CFrame.new(0, 3.3, 0), CFrame.new(5.5, 3.2, 0)
