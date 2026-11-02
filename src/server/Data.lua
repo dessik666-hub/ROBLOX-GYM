@@ -81,9 +81,6 @@ local function sanitize(raw)
 	if fame and fame >= 0 and fame < 1e300 then
 		profile.fame = fame
 	end
-	if raw.lang == "en" or raw.lang == "ru" then
-		profile.lang = raw.lang
-	end
 	local speed = tonumber(raw.speed)
 	if speed and Config.Speeds[math.floor(speed)] then
 		profile.speed = math.floor(speed)
@@ -117,7 +114,6 @@ function Data.save(player, profile)
 		plates = profile.plates,
 		speed = profile.speed,
 		fame = profile.fame,
-		lang = profile.lang,
 	}
 	local ok, err = withRetries(function()
 		store:SetAsync("p_" .. player.UserId, payload)

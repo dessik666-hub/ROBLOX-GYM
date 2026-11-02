@@ -37,26 +37,23 @@ local SetSpeedRemote = remote("SetSpeed") -- C->S  cardio speed index
 local SetAutoRemote = remote("SetAuto") -- C->S  auto-train on/off
 local LeaveRemote = remote("Leave") -- C->S  leave the machine
 local RankUpRemote = remote("RankUp") -- C->S  claim next rank
-local SetLanguageRemote = remote("SetLanguage") -- C->S  "en" / "ru", saved in the profile
 
 ---------------------------------------------------------------------------
 -- Sessions
 ---------------------------------------------------------------------------
 local sessions = {} -- [player] = session
 
--- Sends a Strings key; the client shows it in the player's language.
--- args may include { rank = i } to be resolved to a localized rank title.
-local function notify(player, key, kind, args)
+local function notify(player, text, kind)
 	local s = sessions[player]
 	local now = os.clock()
 	if s then
 		-- Don't spam the same message
-		if s.lastNotify[key] and now - s.lastNotify[key] < 1.5 then
+		if s.lastNotify[text] and now - s.lastNotify[text] < 1.5 then
 			return
 		end
-		s.lastNotify[key] = now
+		s.lastNotify[text] = now
 	end
-	NotifyRemote:FireClient(player, key, kind or "info", args or {})
+	NotifyRemote:FireClient(player, text, kind or "info")
 end
 
 local function getAlive(player)
@@ -140,12 +137,12 @@ local function enterStation(player, station)
 		return
 	end
 	if station.occupant then
-		notify(player, station.cfg.type == "pose" and "n.stageTaken" or "n.taken", "warn")
+		notify(player, station.cfg.type == "pose" and "Это место на подиуме занято" or "Тренажёр занят, найди свободный", "warn")
 		return
 	end
 	local sila = Config.sila(s.profile.stats)
 	if sila < station.cfg.unlock then
-		notify(player, "n.locked", "warn", { Config.format(station.cfg.unlock) })
+		notify(player, "🔒 Откроется при Силе " .. Config.format(station.cfg.unlock), "warn")
 		return
 	end
 	local character, humanoid, root = getAlive(player)
@@ -174,7 +171,7 @@ local function enterStation(player, station)
 	elseif station.cfg.type == "pose" then
 		station.applauded = {}
 		setSpotlight(station, true)
-		notify(player, "n.onStage", "good")
+		notify(player, "Ты на подиуме! Зрители дают ⭐ Славу, игроки могут аплодировать", "good")
 	end
 	-- Set Kind before Station: the client starts animating when Station appears
 	character:SetAttribute("Kind", station.kind)
@@ -192,7 +189,7 @@ local function applaud(player, station)
 		return
 	end
 	if s.station then
-		notify(player, "n.leaveFirst", "warn")
+		notify(player, "Сначала сойди с тренажёра", "warn")
 		return
 	end
 	local now = os.clock()
@@ -201,14 +198,14 @@ local function applaud(player, station)
 	end
 	station.applauded = station.applauded or {}
 	if station.applauded[player.UserId] then
-		notify(player, "n.alreadyApplauded", "warn")
+		notify(player, "Ты уже аплодировал этому выходу", "warn")
 		return
 	end
 	station.applauded[player.UserId] = true
 	s.lastApplause = now
 	ps.profile.fame += Config.ApplauseFame
 	FameFxRemote:FireAllClients(poser, Config.ApplauseFame, player)
-	notify(poser, "n.applauded", "good", { player.DisplayName, Config.ApplauseFame })
+	notify(poser, player.DisplayName .. " аплодирует тебе! +" .. Config.ApplauseFame .. " ⭐", "good")
 end
 
 for _, station in ipairs(stations) do
@@ -255,13 +252,13 @@ local function doRep(player, isAuto)
 	if have < req then
 		s.combo = 0
 		RepFxRemote:FireAllClients(player, station.id, false, machine.stat, 0, false)
-		notify(player, "n.tooHeavy", "warn", { Config.format(req), Config.format(have) })
+		notify(player, "Слишком тяжело! Нужно " .. Config.format(req) .. ", у тебя " .. Config.format(have), "warn")
 		return
 	end
 	if s.energy < cost then
 		s.combo = 0
 		RepFxRemote:FireAllClients(player, station.id, false, machine.stat, 0, false)
-		notify(player, "n.noStamina", "warn")
+		notify(player, "Нет выносливости! Отдохни или побегай на дорожке", "warn")
 		return
 	end
 
@@ -303,7 +300,7 @@ local function cardioTick(player, s)
 	if stats.stamina < Config.Speeds[speedIndex].req then
 		speedIndex = bestSpeed(stats.stamina)
 		s.profile.speed = speedIndex
-		notify(player, "n.tooFast", "warn")
+		notify(player, "Слишком быстро — скорость снижена", "warn")
 		if player.Character then
 			player.Character:SetAttribute("RunSpeed", Config.Speeds[speedIndex].mph)
 		end
@@ -338,7 +335,7 @@ SetPlatesRemote.OnServerEvent:Connect(function(player, counts)
 	end
 	local n = Config.plateCount(clean)
 	if n < 1 or n > Config.MaxPlates then
-		notify(player, "n.plates", "warn", { Config.MaxPlates })
+		notify(player, "Можно от 1 до " .. Config.MaxPlates .. " блинов", "warn")
 		return
 	end
 	s.profile.plates = clean
@@ -351,7 +348,7 @@ SetSpeedRemote.OnServerEvent:Connect(function(player, index)
 		return
 	end
 	if s.profile.stats.stamina < sp.req then
-		notify(player, "n.needStamina", "warn", { Config.format(sp.req) })
+		notify(player, "Нужно " .. Config.format(sp.req) .. " выносливости", "warn")
 		return
 	end
 	s.profile.speed = index
@@ -372,13 +369,6 @@ LeaveRemote.OnServerEvent:Connect(function(player)
 	leaveStation(player, true)
 end)
 
-SetLanguageRemote.OnServerEvent:Connect(function(player, lang)
-	local s = sessions[player]
-	if s and (lang == "en" or lang == "ru") then
-		s.profile.lang = lang
-	end
-end)
-
 RankUpRemote.OnServerEvent:Connect(function(player)
 	local s = sessions[player]
 	if not s then
@@ -387,7 +377,7 @@ RankUpRemote.OnServerEvent:Connect(function(player)
 	if Config.canRankUp(s.profile.stats, s.profile.rank) then
 		s.profile.rank += 1
 		local r = Config.Ranks[s.profile.rank]
-		notify(player, "n.rankUp", "good", { { rank = s.profile.rank }, math.floor(r.bonus * 100) })
+		notify(player, "Новый ранг: " .. r.title .. "! Бонус +" .. math.floor(r.bonus * 100) .. "%", "good")
 	end
 end)
 
@@ -426,10 +416,10 @@ local function makeLeaderstats(player)
 	local folder = Instance.new("Folder")
 	folder.Name = "leaderstats"
 	local sila = Instance.new("IntValue")
-	sila.Name = "Strength"
+	sila.Name = "Сила"
 	sila.Parent = folder
 	local fame = Instance.new("IntValue")
-	fame.Name = "Fame"
+	fame.Name = "Слава"
 	fame.Parent = folder
 	folder.Parent = player
 	return sila, fame
@@ -466,7 +456,7 @@ local function onPlayerAdded(player)
 	sessions[player].leaderSila = silaValue
 	sessions[player].leaderFame = fameValue
 	if not canSave and not Data.isStudio then
-		notify(player, "n.loadFail", "warn")
+		notify(player, "Не удалось загрузить прогресс — он не будет сохранён в этой сессии", "warn")
 	end
 
 	player.CharacterRemoving:Connect(function()
@@ -531,7 +521,6 @@ local function snapshot(s)
 		auto = s.auto,
 		kind = s.station and s.station.kind or nil,
 		fame = s.profile.fame,
-		lang = s.profile.lang, -- nil until the player picks; client then uses the Roblox locale
 	}
 end
 
@@ -608,7 +597,7 @@ local function updateScreens()
 			if s then
 				line.Text = string.format("%d. %s — 🏆 %s · ⭐ %s", i, poser.DisplayName, Config.format(Config.sila(s.profile.stats)), Config.format(s.profile.fame))
 			else
-				line.Text = i .. ". Free — step up and flex!"
+				line.Text = i .. ". Свободно — выходи и покажи мышцы!"
 			end
 		end
 	end

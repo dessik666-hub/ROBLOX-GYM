@@ -9,14 +9,26 @@ local Players = game:GetService("Players")
 
 local RS = game:GetService("ReplicatedStorage")
 local Config = require(RS.Shared.Config)
-local Strings = require(RS.Shared.Strings)
 local Looks = require(script.Parent.Looks)
 
 local Npcs = {}
 
-local GREETINGS = { "npc.g1", "npc.g2", "npc.g3", "npc.g4", "npc.g5" }
+local GREETINGS = {
+	"Добро пожаловать в Neon Gym!",
+	"Зал справа, подиум слева",
+	"Дорожка качает выносливость — без неё тяжёлый вес не поднять",
+	"Накачался? Иди на подиум и покажи мышцы!",
+	"Тапай по экрану на тренажёре, чтобы делать повторы",
+}
 
-local CHEERS = { "npc.c1", "npc.c2", "npc.c3", "npc.c4", "npc.c5", "npc.c6" }
+local CHEERS = {
+	"Давай, ещё разок!",
+	"Ты лучший!",
+	"Не бойся, тебе это легко!",
+	"Держись, почти!",
+	"Отличная техника!",
+	"Вот это пампинг!",
+}
 
 -- look: see Looks.lua; build = { width, height }
 local function makeRig(name, cf, look, build)
@@ -99,19 +111,11 @@ local function bubble(rig)
 	pad.PaddingRight = UDim.new(0, 8)
 	pad.Parent = frame
 
-	-- Speech is sent as a string key (+ optional argument); each client shows it
-	-- in its own language. Text holds the English version as a fallback.
-	local seq = 0
-	return function(key, arg, seconds)
-		seq += 1
-		local my = seq
-		frame:SetAttribute("Arg", arg)
-		frame:SetAttribute("Key", key)
-		frame:SetAttribute("Seq", seq)
-		frame.Text = arg and Strings.t("en", key, arg) or Strings.t("en", key)
+	return function(text, seconds)
+		frame.Text = text
 		gui.Enabled = true
 		task.delay(seconds or 3, function()
-			if seq == my then
+			if frame.Text == text then
 				gui.Enabled = false
 			end
 		end)
@@ -162,7 +166,7 @@ function Npcs.start(parent, layout, getTrainees)
 
 	-- Receptionist behind the desk, facing the spawn
 	local a = layout.admin
-	local admin = makeRig("Lana", CFrame.lookAt(a.pos, a.pos + a.facing), Looks.cast.admin.look, Looks.cast.admin.build)
+	local admin = makeRig("Администратор Лана", CFrame.lookAt(a.pos, a.pos + a.facing), Looks.cast.admin.look, Looks.cast.admin.build)
 	admin.Parent = folder
 	anchor(admin)
 	local adminSay = bubble(admin)
@@ -170,9 +174,9 @@ function Npcs.start(parent, layout, getTrainees)
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function()
 			task.wait(2)
-			adminSay("npc.hello", player.DisplayName, 4)
+			adminSay("Привет, " .. player.DisplayName .. "! " .. GREETINGS[1], 4)
 			task.wait(4.5)
-			adminSay(GREETINGS[2], nil, 4)
+			adminSay(GREETINGS[2], 4)
 		end)
 	end)
 	task.spawn(function()
@@ -180,13 +184,13 @@ function Npcs.start(parent, layout, getTrainees)
 		while admin.Parent do
 			task.wait(12)
 			i = i % #GREETINGS + 1
-			adminSay(GREETINGS[i], nil, 5)
+			adminSay(GREETINGS[i], 5)
 		end
 	end)
 
 	-- Bodybuilders posing on the stage
 	for _, p in ipairs(layout.posers) do
-		local style = Looks.cast.posers[p.name] or Looks.cast.posers["Rex"]
+		local style = Looks.cast.posers[p.name] or Looks.cast.posers["Рекс"]
 		local rig = makeRig(p.name, CFrame.lookAt(p.pos, p.pos + p.facing), style.look, style.build)
 		rig.Parent = folder
 		anchor(rig)
@@ -197,7 +201,7 @@ function Npcs.start(parent, layout, getTrainees)
 	-- Spectators clapping along the carpet
 	for i, s in ipairs(layout.spectators) do
 		local look = Looks.cast.spectators[(i - 1) % #Looks.cast.spectators + 1]
-		local rig = makeRig("Fan " .. i, CFrame.lookAt(s.pos, s.pos + s.facing), look, { width = 0.95 + (i % 3) * 0.1, height = 0.92 + (i % 4) * 0.05 })
+		local rig = makeRig("Зритель " .. i, CFrame.lookAt(s.pos, s.pos + s.facing), look, { width = 0.95 + (i % 3) * 0.1, height = 0.92 + (i % 4) * 0.05 })
 		rig.Parent = folder
 		anchor(rig)
 		rig:SetAttribute("Pose", "clap")
@@ -210,7 +214,7 @@ function Npcs.start(parent, layout, getTrainees)
 	-- Coach walks to trainees in the gym and cheers
 	local area = layout.coachArea
 	local start = Vector3.new((area.min.X + area.max.X) / 2, 3.2, 0)
-	local coach = makeRig("Coach Max", CFrame.new(start), Looks.cast.coach.look, Looks.cast.coach.build)
+	local coach = makeRig("Тренер Макс", CFrame.new(start), Looks.cast.coach.look, Looks.cast.coach.build)
 	coach.Parent = folder
 	local coachRoot = coach:FindFirstChild("HumanoidRootPart")
 	local coachHumanoid = coach:FindFirstChildOfClass("Humanoid")
@@ -232,7 +236,7 @@ function Npcs.start(parent, layout, getTrainees)
 			coachHumanoid:MoveTo(target)
 			coachHumanoid.MoveToFinished:Wait()
 			if #trainees > 0 then
-				coachSay(CHEERS[math.random(1, #CHEERS)], nil, 3)
+				coachSay(CHEERS[math.random(1, #CHEERS)], 3)
 			end
 			task.wait(math.random(3, 6))
 		end
