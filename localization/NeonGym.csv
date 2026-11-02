@@ -1,0 +1,91 @@
+Key,Source,Context,Example,ru
+machine.dumbbells,Dumbbells,,,Гантели
+machine.treadmill,Treadmill,,,Беговая дорожка
+machine.bench,Bench Press,,,Скамья для жима
+machine.abs,Ab Bench,,,Скамья для пресса
+machine.legpress,Leg Press,,,Жим ногами
+machine.pulldown,Lat Pulldown,,,Тяга верхнего блока
+machine.rower,Rowing Machine,,,Гребной тренажёр
+machine.squat,Barbell Squat,,,Приседания со штангой
+machine.cable,Cable Crossover,,,Кроссовер
+machine.titan,Titan Rig,,,Комплекс «Титан»
+machine.pose,Podium,,,Подиум
+stat.stamina,Stamina,,,Выносливость
+stat.chest,Chest,,,Грудь
+stat.abs,Abs,,,Пресс
+stat.back,Back,,,Спина
+stat.arms,Arms,,,Руки
+stat.legs,Legs,,,Ноги
+stat.all,Full body,,,Всё тело
+rank.1,Rookie,,,Новичок
+rank.2,Beginner,,,Начинающий
+rank.3,Amateur,,,Любитель
+rank.4,Strong Guy,,,Сильный парень
+rank.5,Athlete,,,Атлет
+rank.6,Bodybuilder,,,Качок
+rank.7,Gym Champion,,,Чемпион зала
+rank.8,Neon Titan,,,Неоновый титан
+hud.strength,🏆 Strength: {1},,,🏆 Сила: {1}
+hud.rankBonus,+{1}%,,,+{1}%
+hud.combo,⚡ Pump +{1}%,,,⚡ Пампинг +{1}%
+hud.next,"Next: {1} — muscles {2}, ❤ {3}",,,"След.: {1} — мышцы {2}, ❤ {3}"
+hud.maxRank,Max rank!,,,Максимальный ранг!
+hud.rankUp,⬆ Rank up,,,⬆ Повысить ранг
+hud.tapHint,Tap the screen to do a rep,,,Тапай по экрану — повтор
+hud.runHint,Running builds ❤ stamina,,,Бег качает ❤ выносливость
+hud.autoOn,Auto: on,,,Авто: вкл
+hud.autoOff,Auto: off,,,Авто: выкл
+hud.leave,Leave (Q),,,Выйти (Q)
+hud.lb,lb,,,фунт.
+hud.weightTitle,{1} · {2} lb · ❤ −{3} per rep,,,{1} · {2} фунт. · ❤ −{3} за повтор
+hud.recommended,Recommended: {1} {2}  (you have {3}),,,Рекомендуется: {1} {2}  (у тебя {3})
+hud.cardioTitle,{1} · {2} mph · +{3} ❤ per sec,,,{1} · {2} миль/ч · +{3} ❤ в сек.
+hud.speed,{1} mph,,,{1} миль/ч
+hud.speedLocked,🔒 {1} · ❤{2},,,🔒 {1} · ❤{2}
+hud.poseTitle,🌟 You're on stage! Poses change by themselves,,,🌟 Ты на подиуме! Позы меняются сами
+hud.poseInfo,Crowd: +{1} ⭐ every {2} s · players applaud (F): +{3} ⭐,,,Зрители: +{1} ⭐ каждые {2} с · игроки аплодируют (F): +{3} ⭐
+hud.poseHint,"More strength, louder crowd",,,Больше Силы — громче зал
+hud.maxPlates,Max {1} plates,,,Максимум блинов — {1}
+hud.minPlates,You need at least one plate,,,Нужен хотя бы один блин
+popup.perfect,Perfect weight!,,,Идеальный вес!
+tag.locked,🔒 Strength {1},,,🔒 Сила {1}
+tag.busy,Taken,,,Занято
+tag.free,Free — show your muscles!,,,Свободно — покажи мышцы!
+prompt.train,Train,,,Тренироваться
+prompt.start,Start,,,Начать
+prompt.pose,Step on stage,,,Выйти на подиум
+prompt.applaud,Applaud 👏,,,Аплодировать 👏
+n.taken,"This machine is taken, find a free one",,,"Тренажёр занят, найди свободный"
+n.stageTaken,This spot on stage is taken,,,Это место на подиуме занято
+n.locked,🔒 Unlocks at {1} Strength,,,🔒 Откроется при Силе {1}
+n.onStage,"You're on stage! The crowd gives ⭐ Fame, players can applaud",,,"Ты на подиуме! Зрители дают ⭐ Славу, игроки могут аплодировать"
+n.tooHeavy,"Too heavy! Need {1}, you have {2}",,,"Слишком тяжело! Нужно {1}, у тебя {2}"
+n.noStamina,Out of stamina! Rest or run on the treadmill,,,Нет выносливости! Отдохни или побегай на дорожке
+n.tooFast,Too fast — speed lowered,,,Слишком быстро — скорость снижена
+n.plates,You can use 1 to {1} plates,,,Можно от 1 до {1} блинов
+n.needStamina,Need {1} stamina,,,Нужно {1} выносливости
+n.rankUp,New rank: {1}! Bonus +{2}%,,,Новый ранг: {1}! Бонус +{2}%
+n.loadFail,Couldn't load your progress — it won't be saved this session,,,Не удалось загрузить прогресс — он не будет сохранён в этой сессии
+n.leaveFirst,Leave the machine first,,,Сначала сойди с тренажёра
+n.alreadyApplauded,You already applauded this performance,,,Ты уже аплодировал этому выходу
+n.applauded,{1} applauds you! +{2} ⭐,,,{1} аплодирует тебе! +{2} ⭐
+npc.hello,"Hi, {1}! Welcome to Neon Gym!",,,"Привет, {1}! Добро пожаловать в Neon Gym!"
+npc.g1,Welcome to Neon Gym!,,,Добро пожаловать в Neon Gym!
+npc.g2,"The gym is on the right, the podium on the left",,,"Зал справа, подиум слева"
+npc.g3,The treadmill builds stamina — you need it for heavy weights,,,Дорожка качает выносливость — без неё тяжёлый вес не поднять
+npc.g4,Pumped? Go to the podium and show off!,,,Накачался? Иди на подиум и покажи мышцы!
+npc.g5,Tap the screen on a machine to do reps,,,"Тапай по экрану на тренажёре, чтобы делать повторы"
+npc.c1,One more!,,,"Давай, ещё разок!"
+npc.c2,You're the best!,,,Ты лучший!
+npc.c3,"Don't be afraid, it's easy for you!",,,"Не бойся, тебе это легко!"
+npc.c4,Hang in there!,,,"Держись, почти!"
+npc.c5,Great form!,,,Отличная техника!
+npc.c6,What a pump!,,,Вот это пампинг!
+,GYM →,,,ТРЕНАЖЁРНЫЙ ЗАЛ →
+,← PODIUM,,,← ПОДИУМ
+,CARDIO,,,КАРДИО
+,STRENGTH,,,СИЛОВАЯ ЗОНА
+,TITAN,,,ТИТАН
+,VIP · SOON,,,VIP · СКОРО
+,🏆 TOP BY STRENGTH,,,🏆 ТОП ПО СИЛЕ
+,🌟 ON STAGE NOW,,,🌟 СЕЙЧАС НА ПОДИУМЕ

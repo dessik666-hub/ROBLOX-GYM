@@ -5,6 +5,8 @@ local RS = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Config = require(RS:WaitForChild("Shared"):WaitForChild("Config"))
+local Strings = require(RS.Shared:WaitForChild("Strings"))
+local LocalizationService = game:GetService("LocalizationService")
 local Hud = require(script.Parent:WaitForChild("Hud"))
 local TrainAnimator = require(script.Parent:WaitForChild("TrainAnimator"))
 local Popups = require(script.Parent:WaitForChild("Popups"))
@@ -18,6 +20,27 @@ local SyncRemote, RepFxRemote, RunFxRemote, NotifyRemote = r("Sync"), r("RepFx")
 local FameFxRemote = r("FameFx")
 local RepRemote, SetPlatesRemote, SetSpeedRemote, SetAutoRemote, LeaveRemote, RankUpRemote =
 	r("Rep"), r("SetPlates"), r("SetSpeed"), r("SetAuto"), r("Leave"), r("RankUp")
+local relocalizeBubbles -- defined below
+
+-- Language follows the player's Roblox language automatically.
+-- English and Russian are built in; other languages come from Roblox
+-- automatic translation of the cloud localization table (see README).
+local lang = Strings.fromLocale(LocalizationService.RobloxLocaleId)
+task.spawn(function()
+	local ok, translator = pcall(function()
+		return LocalizationService:GetTranslatorForPlayerAsync(player)
+	end)
+	if ok and translator then
+		Strings.translator = translator
+		lang = Strings.fromLocale(translator.LocaleId)
+		if relocalizeBubbles then
+			relocalizeBubbles()
+		end
+	end
+end)
+local function L(key, ...)
+	return Strings.t(lang, key, ...)
+end
 
 local state = nil -- last snapshot from the server
 local pendingPlates = nil -- local plate edits not yet confirmed
@@ -32,9 +55,12 @@ end
 
 local function refresh()
 	if state then
+		Hud.setLanguage(lang)
 		Hud.update(state, currentPlates())
 	end
 end
+
+local updateTags -- defined below
 
 ---------------------------------------------------------------------------
 -- HUD callbacks
@@ -49,11 +75,11 @@ Hud.build({
 		plates[i] = nextValue
 		local n = Config.plateCount(plates)
 		if n > Config.MaxPlates then
-			Hud.toast("Максимум блинов — " .. Config.MaxPlates, "warn")
+			Hud.toast(L("hud.maxPlates", Config.MaxPlates), "warn")
 			return
 		end
 		if n < 1 then
-			Hud.toast("Нужен хотя бы один блин", "warn")
+			Hud.toast(L("hud.minPlates"), "warn")
 			return
 		end
 		pendingPlates = plates
@@ -115,6 +141,8 @@ local function addTag(model)
 
 	local applaudAnchor = model:FindFirstChild("ApplaudAnchor")
 	tags[model] = {
+		name = name,
+		kind = kind,
 		lock = lock,
 		prompt = anchor:WaitForChild("TrainPrompt", 5),
 		applaud = applaudAnchor and applaudAnchor:WaitForChild("ApplaudPrompt", 5),
@@ -133,7 +161,7 @@ task.spawn(function()
 	end)
 end)
 
-local function updateTags()
+updateTags = function()
 	if not state then
 		return
 	end
@@ -149,26 +177,42 @@ local function updateTags()
 				tag.lock.Text = "🌟 " .. occupant.DisplayName
 				tag.lock.TextColor3 = Color3.fromRGB(255, 220, 120)
 			else
-				tag.lock.Text = "Свободно — покажи мышцы!"
+				tag.lock.Text = L("tag.free")
 				tag.lock.TextColor3 = Color3.fromRGB(150, 240, 170)
 			end
 		elseif not unlocked then
-			tag.lock.Text = "🔒 Сила " .. Config.format(tag.unlock)
+			tag.lock.Text = L("tag.locked", Config.format(tag.unlock))
 			tag.lock.TextColor3 = Color3.fromRGB(255, 110, 110)
 		elseif busy then
-			tag.lock.Text = "Занято"
+			tag.lock.Text = L("tag.busy")
 			tag.lock.TextColor3 = Color3.fromRGB(255, 200, 90)
 		else
-			local stat = tag.machine.stat == "all" and "🔥 всё тело" or (Config.StatByKey[tag.machine.stat].icon .. " " .. Config.StatByKey[tag.machine.stat].name)
+			local stat = tag.machine.stat == "all" and ("🔥 " .. L("stat.all")) or (Config.StatByKey[tag.machine.stat].icon .. " " .. L("stat." .. tag.machine.stat))
 			tag.lock.Text = stat
 			tag.lock.TextColor3 = Color3.fromRGB(150, 240, 170)
 		end
 		-- Prompts are hidden locally while training or when the machine is taken
+		tag.name.Text = L("machine." .. tag.kind)
 		if tag.prompt then
 			tag.prompt.Enabled = not training and not busy
+			tag.prompt.ObjectText = L("machine." .. tag.kind)
+			local t = tag.machine.type
+			tag.prompt.ActionText = t == "cardio" and L("prompt.start") or (t == "pose" and L("prompt.pose") or L("prompt.train"))
 		end
 		if tag.applaud then
 			tag.applaud.Enabled = busy and occupantId ~= player.UserId and not training
+			tag.applaud.ActionText = L("prompt.applaud")
+			tag.applaud.ObjectText = L("machine.pose")
+		end
+	end
+
+	-- Everyone's overhead tag: rank title in this player's language
+	for _, p in ipairs(Players:GetPlayers()) do
+		local head = p.Character and p.Character:FindFirstChild("Head")
+		local overhead = head and head:FindFirstChild("NeonTag")
+		local rankIndex = overhead and overhead:GetAttribute("RankIndex")
+		if rankIndex and overhead:FindFirstChild("Rank") then
+			overhead.Rank.Text = L("rank." .. rankIndex) .. "  ·  ⭐ " .. Config.format(overhead:GetAttribute("Fame") or 0)
 		end
 	end
 end
@@ -195,7 +239,7 @@ RepFxRemote.OnClientEvent:Connect(function(who, _stationId, ok, statKey, gain, s
 		local stat = statKey == "all" and { icon = "🔥", color = Color3.fromRGB(255, 120, 60) } or Config.StatByKey[statKey]
 		Popups.show(character, "+" .. Config.format(gain) .. " " .. stat.icon, stat.color, who == player)
 		if sweet and who == player then
-			Popups.show(character, "Идеальный вес!", Color3.fromRGB(255, 230, 120), true)
+			Popups.show(character, L("popup.perfect"), Color3.fromRGB(255, 230, 120), true)
 		end
 	elseif not ok and who == player then
 		Popups.show(character, "✖", Color3.fromRGB(255, 80, 90), false)
@@ -217,8 +261,61 @@ FameFxRemote.OnClientEvent:Connect(function(poser, gain, applauder)
 	end
 end)
 
-NotifyRemote.OnClientEvent:Connect(function(text, kind)
-	Hud.toast(text, kind)
+-- Server sends a Strings key and arguments; { rank = i } becomes a localized rank title
+NotifyRemote.OnClientEvent:Connect(function(key, kind, args)
+	local resolved = {}
+	for i, a in ipairs(typeof(args) == "table" and args or {}) do
+		if typeof(a) == "table" and a.rank then
+			resolved[i] = L("rank." .. a.rank)
+		else
+			resolved[i] = a
+		end
+	end
+	Hud.toast(L(key, table.unpack(resolved)), kind)
+end)
+
+---------------------------------------------------------------------------
+-- NPC speech bubbles: the server sends a key; show it in this player's language
+---------------------------------------------------------------------------
+local bubbleLabels = {}
+
+local function renderBubble(labelObj)
+	local key = labelObj:GetAttribute("Key")
+	if key then
+		local arg = labelObj:GetAttribute("Arg")
+		labelObj.Text = arg and L(key, arg) or L(key)
+	end
+end
+
+relocalizeBubbles = function()
+	for labelObj in pairs(bubbleLabels) do
+		if labelObj.Parent then
+			renderBubble(labelObj)
+		else
+			bubbleLabels[labelObj] = nil
+		end
+	end
+end
+
+local function watchBubble(obj)
+	if obj:IsA("TextLabel") and obj.Parent and obj.Parent.Name == "Bubble" then
+		bubbleLabels[obj] = true
+		obj:GetAttributeChangedSignal("Seq"):Connect(function()
+			renderBubble(obj)
+		end)
+		renderBubble(obj)
+	end
+end
+
+task.spawn(function()
+	local npcs = workspace:WaitForChild("Gym"):WaitForChild("NPCs", 30)
+	if not npcs then
+		return
+	end
+	for _, d in ipairs(npcs:GetDescendants()) do
+		watchBubble(d)
+	end
+	npcs.DescendantAdded:Connect(watchBubble)
 end)
 
 ---------------------------------------------------------------------------

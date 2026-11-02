@@ -268,8 +268,8 @@ local function buildField(hall)
 	end
 
 	-- Signposts pointing to the gym area and the podium
-	sign(hall, "ТРЕНАЖЁРНЫЙ ЗАЛ →", Vector3.new(40, 9, -6), FACE_PLUS_Z, STRENGTH, 30, 6)
-	sign(hall, "← ПОДИУМ", Vector3.new(-40, 9, -6), FACE_PLUS_Z, PINK, 24, 6)
+	sign(hall, "GYM →", Vector3.new(40, 9, -6), FACE_PLUS_Z, STRENGTH, 30, 6)
+	sign(hall, "← PODIUM", Vector3.new(-40, 9, -6), FACE_PLUS_Z, PINK, 24, 6)
 end
 
 local function buildLobby(hall)
@@ -293,7 +293,7 @@ local function buildLobby(hall)
 	part(hall, "PathPodium", Vector3.new(60, 0.12, 3), CFrame.new(-30, 0.06, 0), PINK, Enum.Material.Neon)
 	part(hall, "PathCenter", Vector3.new(3, 0.12, 45), CFrame.new(0, 0.06, 22), GOLD, Enum.Material.Neon)
 
-	return screen(hall, "TopBoard", Vector3.new(50, 22, 1), CFrame.new(0, 15, -60), Enum.NormalId.Back, "🏆 ТОП ПО СИЛЕ", 10, GOLD)
+	return screen(hall, "TopBoard", Vector3.new(50, 22, 1), CFrame.new(0, 15, -60), Enum.NormalId.Back, "🏆 TOP BY STRENGTH", 10, GOLD)
 end
 
 local function buildGym(hall)
@@ -302,10 +302,10 @@ local function buildGym(hall)
 	zone(hall, "TitanZone", Vector2.new(350, -55), Vector2.new(50, 90), PINK)
 	zone(hall, "VipZone", Vector2.new(330, 95), Vector2.new(100, 50), GOLD)
 
-	sign(hall, "КАРДИО", Vector3.new(80, 9, 95), FACE_MINUS_X, CARDIO, 30, 6)
-	sign(hall, "СИЛОВАЯ ЗОНА", Vector3.new(80, 9, -37), FACE_MINUS_X, STRENGTH, 40, 6)
-	sign(hall, "ТИТАН", Vector3.new(322, 9, -55), FACE_MINUS_X, PINK, 24, 6)
-	sign(hall, "VIP-ЗАЛ · скоро", Vector3.new(282, 9, 95), FACE_MINUS_X, GOLD, 36, 6)
+	sign(hall, "CARDIO", Vector3.new(80, 9, 95), FACE_MINUS_X, CARDIO, 30, 6)
+	sign(hall, "STRENGTH", Vector3.new(80, 9, -37), FACE_MINUS_X, STRENGTH, 40, 6)
+	sign(hall, "TITAN", Vector3.new(322, 9, -55), FACE_MINUS_X, PINK, 24, 6)
+	sign(hall, "VIP · SOON", Vector3.new(282, 9, 95), FACE_MINUS_X, GOLD, 36, 6)
 end
 
 local function buildPodium(hall)
@@ -365,7 +365,7 @@ local function buildPodium(hall)
 	end
 
 	-- Screen above the carpet with the current posers
-	local stageScreen = screen(hall, "StageScreen", Vector3.new(1, 14, 44), CFrame.new(-200, 20, 0), Enum.NormalId.Right, "🌟 СЕЙЧАС НА ПОДИУМЕ", 3, PINK)
+	local stageScreen = screen(hall, "StageScreen", Vector3.new(1, 14, 44), CFrame.new(-200, 20, 0), Enum.NormalId.Right, "🌟 ON STAGE NOW", 3, PINK)
 
 	return stageScreen
 end
@@ -411,11 +411,11 @@ function World.build()
 		local prompt = Instance.new("ProximityPrompt")
 		prompt.Name = "TrainPrompt"
 		if cfg.type == "cardio" then
-			prompt.ActionText = "Начать"
+			prompt.ActionText = "Start"
 		elseif cfg.type == "pose" then
-			prompt.ActionText = "Выйти на подиум"
+			prompt.ActionText = "Step on stage"
 		else
-			prompt.ActionText = "Тренироваться"
+			prompt.ActionText = "Train"
 		end
 		prompt.ObjectText = cfg.name
 		prompt.HoldDuration = 0
@@ -438,8 +438,8 @@ function World.build()
 			local anchor = model:FindFirstChild("ApplaudAnchor")
 			local applaud = Instance.new("ProximityPrompt")
 			applaud.Name = "ApplaudPrompt"
-			applaud.ActionText = "Аплодировать 👏"
-			applaud.ObjectText = "Подиум"
+			applaud.ActionText = "Applaud 👏"
+			applaud.ObjectText = "Podium"
 			applaud.KeyboardKeyCode = Enum.KeyCode.F
 			applaud.HoldDuration = 0
 			applaud.MaxActivationDistance = 60
@@ -459,10 +459,10 @@ function World.build()
 		admin = { pos = Vector3.new(0, 3.2, 21), facing = Vector3.new(0, 0, 1) },
 		coachArea = { min = Vector2.new(90, -110), max = Vector2.new(270, 110) },
 		posers = {
-			{ name = "Рекс", sila = 120000, pos = Vector3.new(-264, 6.2, -30), facing = Vector3.new(1, 0, 0.3) },
-			{ name = "Бетон", sila = 450000, pos = Vector3.new(-264, 6.2, 30), facing = Vector3.new(1, 0, -0.3) },
-			{ name = "Молния", sila = 1300000, pos = Vector3.new(-248, 6.2, -42), facing = Vector3.new(1, 0, 0.2) },
-			{ name = "Гриф", sila = 5200000, pos = Vector3.new(-248, 6.2, 42), facing = Vector3.new(1, 0, -0.2) },
+			{ name = "Rex", sila = 120000, pos = Vector3.new(-264, 6.2, -30), facing = Vector3.new(1, 0, 0.3) },
+			{ name = "Brick", sila = 450000, pos = Vector3.new(-264, 6.2, 30), facing = Vector3.new(1, 0, -0.3) },
+			{ name = "Bolt", sila = 1300000, pos = Vector3.new(-248, 6.2, -42), facing = Vector3.new(1, 0, 0.2) },
+			{ name = "Griff", sila = 5200000, pos = Vector3.new(-248, 6.2, 42), facing = Vector3.new(1, 0, -0.2) },
 		},
 		spectators = {},
 	}
